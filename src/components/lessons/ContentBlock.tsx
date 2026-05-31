@@ -1,3 +1,4 @@
+import { MathView } from "@dawsonxiong/react-native-latex-renderer/lib/module/MathView";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
@@ -213,7 +214,11 @@ function MathBlock({
     <View
       style={[styles.mathBlock, { backgroundColor: colors.backgroundElement }]}
     >
-      <Text style={[styles.mathText, { color: colors.text }]}>{formula}</Text>
+      <MathView
+        math={`$$${formula}$$`}
+        style={{ color: colors.text }}
+        fontSize={16}
+      />
     </View>
   );
 }
@@ -385,7 +390,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginVertical: 8,
   },
-  mathText: { fontFamily: "monospace", fontSize: 16, textAlign: "center" },
+  mathText: { fontSize: 16, textAlign: "center" },
   quizBlock: {
     marginHorizontal: 24,
     padding: 16,

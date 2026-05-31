@@ -1,0 +1,1187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quant Academy — App Store Screenshots</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --font-display: "Space Grotesk", sans-serif;
+        --font-body: "Inter", -apple-system, sans-serif;
+        --color-ink: #ffffff;
+        --color-ink-muted: rgba(255, 255, 255, 0.72);
+        --color-glass: rgba(255, 255, 255, 0.06);
+        --color-glass-border: rgba(255, 255, 255, 0.12);
+        --radius-card: 28px;
+        --radius-pill: 100px;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: var(--font-body);
+        background: #050508;
+        color: #fff;
+        min-height: 100vh;
+      }
+
+      .controls {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background: rgba(5, 5, 8, 0.92);
+        backdrop-filter: blur(24px) saturate(1.4);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        padding: 14px 28px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+      }
+      .controls h1 {
+        font-family: var(--font-display);
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        flex: 1;
+        opacity: 0.9;
+      }
+      .btn {
+        padding: 10px 22px;
+        border-radius: 10px;
+        border: none;
+        font-family: var(--font-body);
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, #3b82f6, #6366f1);
+        color: #fff;
+        box-shadow: 0 2px 12px rgba(59, 130, 246, 0.3);
+      }
+      .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+      }
+      .btn-secondary {
+        background: rgba(255, 255, 255, 0.06);
+        color: rgba(255, 255, 255, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        transform: none;
+      }
+      .progress-bar {
+        display: none;
+        width: 180px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .progress-bar.active {
+        display: block;
+      }
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+        border-radius: 2px;
+        transition: width 0.3s ease;
+      }
+      .status {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.4);
+        font-weight: 500;
+      }
+
+      .content {
+        padding-top: 90px;
+        padding-bottom: 80px;
+      }
+      .section-title {
+        font-family: var(--font-display);
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        padding: 48px 28px 24px;
+        color: rgba(255, 255, 255, 0.9);
+      }
+      .section-title span {
+        font-size: 13px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.35);
+        margin-left: 10px;
+        letter-spacing: 0;
+      }
+      .screenshots-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        padding: 0 28px;
+        justify-content: flex-start;
+      }
+      .screenshot-wrapper {
+        position: relative;
+      }
+      .screenshot-label {
+        text-align: center;
+        font-size: 11px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.3);
+        margin-top: 10px;
+      }
+
+      .iphone-frame {
+        width: 270px;
+        height: 584px;
+        border-radius: 36px;
+        overflow: hidden;
+        position: relative;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .ipad-frame {
+        width: 340px;
+        height: 453px;
+        border-radius: 20px;
+        overflow: hidden;
+        position: relative;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .render-target {
+        position: absolute;
+        left: -99999px;
+        top: 0;
+      }
+      .iphone-render {
+        width: 1284px;
+        height: 2778px;
+      }
+      .ipad-render {
+        width: 2048px;
+        height: 2732px;
+      }
+
+      /* ═══ SCREENSHOT CARD BASE ═══ */
+      .ss-card {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+        font-family: var(--font-body);
+      }
+      .ss-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+        pointer-events: none;
+        z-index: 3;
+      }
+
+      /* ─── Backgrounds ─── */
+      .ss-1 {
+        background: #030712;
+        background-image:
+          radial-gradient(
+            ellipse 140% 70% at 50% 85%,
+            rgba(59, 130, 246, 0.3) 0%,
+            transparent 55%
+          ),
+          radial-gradient(
+            ellipse 80% 50% at 20% 20%,
+            rgba(99, 102, 241, 0.12) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse 60% 40% at 80% 50%,
+            rgba(59, 130, 246, 0.08) 0%,
+            transparent 50%
+          );
+      }
+      .ss-2 {
+        background: #0a0118;
+        background-image:
+          radial-gradient(
+            ellipse 100% 60% at 30% 75%,
+            rgba(139, 92, 246, 0.35) 0%,
+            transparent 55%
+          ),
+          radial-gradient(
+            ellipse 70% 50% at 80% 30%,
+            rgba(236, 72, 153, 0.12) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse 50% 40% at 50% 50%,
+            rgba(139, 92, 246, 0.06) 0%,
+            transparent 50%
+          );
+      }
+      .ss-3 {
+        background: #020e0a;
+        background-image:
+          radial-gradient(
+            ellipse 100% 60% at 40% 80%,
+            rgba(16, 185, 129, 0.3) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse 60% 40% at 80% 20%,
+            rgba(20, 184, 166, 0.12) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse 50% 50% at 20% 50%,
+            rgba(16, 185, 129, 0.06) 0%,
+            transparent 50%
+          );
+      }
+      .ss-4 {
+        background: #0c0704;
+        background-image:
+          radial-gradient(
+            ellipse 120% 60% at 60% 80%,
+            rgba(245, 158, 11, 0.25) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse 60% 50% at 10% 40%,
+            rgba(234, 88, 12, 0.1) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse 50% 40% at 70% 30%,
+            rgba(245, 158, 11, 0.06) 0%,
+            transparent 50%
+          );
+      }
+      .ss-5 {
+        background: #0c0205;
+        background-image:
+          radial-gradient(
+            ellipse 100% 60% at 50% 75%,
+            rgba(239, 68, 68, 0.25) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse 60% 50% at 90% 20%,
+            rgba(244, 63, 94, 0.12) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse 50% 40% at 20% 50%,
+            rgba(239, 68, 68, 0.06) 0%,
+            transparent 50%
+          );
+      }
+      .ss-6 {
+        background: #06040f;
+        background-image:
+          radial-gradient(
+            ellipse 120% 60% at 40% 80%,
+            rgba(99, 102, 241, 0.3) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse 60% 50% at 85% 20%,
+            rgba(168, 85, 247, 0.12) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse 50% 40% at 50% 50%,
+            rgba(99, 102, 241, 0.06) 0%,
+            transparent 50%
+          );
+      }
+      .ss-7 {
+        background: #030a08;
+        background-image:
+          radial-gradient(
+            ellipse 100% 60% at 60% 75%,
+            rgba(20, 184, 166, 0.3) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse 60% 50% at 15% 25%,
+            rgba(6, 182, 212, 0.1) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse 50% 40% at 50% 50%,
+            rgba(20, 184, 166, 0.06) 0%,
+            transparent 50%
+          );
+      }
+      .ss-8 {
+        background: #0d0210;
+        background-image:
+          radial-gradient(
+            ellipse 100% 60% at 30% 80%,
+            rgba(236, 72, 153, 0.3) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse 60% 50% at 90% 25%,
+            rgba(168, 85, 247, 0.12) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse 50% 40% at 60% 50%,
+            rgba(236, 72, 153, 0.06) 0%,
+            transparent 50%
+          );
+      }
+      .ss-9 {
+        background: #030712;
+        background-image:
+          radial-gradient(
+            ellipse 100% 60% at 50% 80%,
+            rgba(59, 130, 246, 0.25) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse 80% 50% at 50% 20%,
+            rgba(6, 182, 212, 0.12) 0%,
+            transparent 40%
+          ),
+          radial-gradient(
+            ellipse 50% 40% at 50% 50%,
+            rgba(59, 130, 246, 0.06) 0%,
+            transparent 50%
+          );
+      }
+      .ss-10 {
+        background: #020a0a;
+        background-image:
+          radial-gradient(
+            ellipse 130% 70% at 50% 75%,
+            rgba(16, 185, 129, 0.35) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse 60% 50% at 75% 20%,
+            rgba(52, 211, 153, 0.08) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse 60% 40% at 30% 50%,
+            rgba(16, 185, 129, 0.06) 0%,
+            transparent 50%
+          );
+      }
+
+      /* ─── Bottom branding bar ─── */
+      .ss-bottom-bar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+      }
+      .iphone-render .ss-bottom-bar {
+        padding: 60px 100px 80px;
+        gap: 20px;
+      }
+      .ipad-render .ss-bottom-bar {
+        padding: 80px 160px 100px;
+        gap: 28px;
+      }
+      .ss-bottom-bar .ss-app-icon {
+        border-radius: 22%;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .ss-bottom-bar .ss-app-icon img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .iphone-render .ss-bottom-bar .ss-app-icon {
+        width: 80px;
+        height: 80px;
+      }
+      .ipad-render .ss-bottom-bar .ss-app-icon {
+        width: 100px;
+        height: 100px;
+      }
+      .ss-bottom-bar .ss-app-name {
+        font-family: var(--font-display);
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.5);
+      }
+      .iphone-render .ss-bottom-bar .ss-app-name {
+        font-size: 32px;
+      }
+      .ipad-render .ss-bottom-bar .ss-app-name {
+        font-size: 40px;
+      }
+
+      /* ─── Phone mockup for hero slides ─── */
+      .ss-mockup-area {
+        z-index: 2;
+        width: 100%;
+        flex: 1;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+      }
+      .ss-mockup-phone {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        overflow: hidden;
+      }
+      .iphone-render .ss-mockup-phone {
+        width: 720px;
+        height: 750px;
+        border-radius: 48px 48px 0 0;
+        padding: 32px 32px 0;
+      }
+      .ipad-render .ss-mockup-phone {
+        width: 1000px;
+        height: 850px;
+        border-radius: 56px 56px 0 0;
+        padding: 40px 40px 0;
+      }
+      .ss-mockup-inner {
+        width: 100%;
+        height: 100%;
+        border-radius: 24px 24px 0 0;
+        background: #111;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        padding: 32px;
+        gap: 16px;
+      }
+      .ss-mockup-bar {
+        height: 20px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.06);
+      }
+      .ss-mockup-bar.short {
+        width: 40%;
+      }
+      .ss-mockup-bar.med {
+        width: 70%;
+      }
+      .ss-mockup-bar.long {
+        width: 90%;
+      }
+      .ss-mockup-card-row {
+        display: flex;
+        gap: 16px;
+        margin-top: 12px;
+      }
+      .ss-mockup-mini-card {
+        flex: 1;
+        height: 80px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .iphone-render .ss-mockup-inner {
+        padding: 40px;
+        gap: 20px;
+        border-radius: 28px 28px 0 0;
+      }
+      .iphone-render .ss-mockup-bar {
+        height: 24px;
+        border-radius: 12px;
+      }
+      .iphone-render .ss-mockup-mini-card {
+        height: 100px;
+        border-radius: 20px;
+      }
+      .iphone-render .ss-mockup-card-row {
+        gap: 20px;
+        margin-top: 16px;
+      }
+      .ipad-render .ss-mockup-inner {
+        padding: 48px;
+        gap: 24px;
+        border-radius: 32px 32px 0 0;
+      }
+      .ipad-render .ss-mockup-bar {
+        height: 28px;
+        border-radius: 14px;
+      }
+      .ipad-render .ss-mockup-mini-card {
+        height: 120px;
+        border-radius: 24px;
+      }
+      .ipad-render .ss-mockup-card-row {
+        gap: 24px;
+        margin-top: 20px;
+      }
+
+      /* ═══ iPhone render sizes ═══ */
+      .iphone-render .ss-card {
+        padding: 180px 100px 200px;
+        justify-content: center;
+        align-items: flex-start;
+      }
+      .iphone-render .ss-headline {
+        font-family: var(--font-display);
+        font-size: 128px;
+        font-weight: 700;
+        letter-spacing: -0.04em;
+        line-height: 1;
+        color: #fff;
+        z-index: 2;
+        margin-bottom: 32px;
+      }
+      .iphone-render .ss-subheadline {
+        font-family: var(--font-body);
+        font-size: 44px;
+        font-weight: 400;
+        line-height: 1.5;
+        color: var(--color-ink-muted);
+        z-index: 2;
+        max-width: 1000px;
+      }
+      .iphone-render .ss-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 20px 40px;
+        border-radius: var(--radius-pill);
+        font-size: 32px;
+        font-weight: 600;
+        margin-bottom: 48px;
+        z-index: 2;
+        border: 1px solid var(--color-glass-border);
+      }
+      .iphone-render .ss-feature-list {
+        list-style: none;
+        z-index: 2;
+        margin-top: 72px;
+        width: 100%;
+      }
+      .iphone-render .ss-feature-list li {
+        font-size: 52px;
+        font-weight: 500;
+        padding: 44px 40px;
+        margin-bottom: 16px;
+        border-radius: 24px;
+        background: var(--color-glass);
+        border: 1px solid var(--color-glass-border);
+        display: flex;
+        align-items: center;
+        gap: 32px;
+        color: rgba(255, 255, 255, 0.9);
+      }
+      .iphone-render .ss-icon {
+        font-size: 60px;
+      }
+      .iphone-render .ss-stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 28px;
+        width: 100%;
+        margin-top: 80px;
+        z-index: 2;
+      }
+      .iphone-render .ss-stat-card {
+        background: var(--color-glass);
+        border: 1px solid var(--color-glass-border);
+        border-radius: var(--radius-card);
+        padding: 72px 40px;
+        text-align: center;
+      }
+      .iphone-render .ss-stat-number {
+        font-family: var(--font-display);
+        font-size: 96px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.03em;
+      }
+      .iphone-render .ss-stat-label {
+        font-size: 34px;
+        font-weight: 500;
+        color: var(--color-ink-muted);
+        margin-top: 12px;
+      }
+      .iphone-render .ss-module-cards {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        margin-top: 64px;
+        z-index: 2;
+      }
+      .iphone-render .ss-module-card {
+        background: var(--color-glass);
+        border: 1px solid var(--color-glass-border);
+        border-radius: 28px;
+        padding: 48px 48px;
+        display: flex;
+        align-items: center;
+        gap: 32px;
+      }
+      .iphone-render .ss-module-emoji {
+        font-size: 56px;
+      }
+      .iphone-render .ss-module-title {
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: 38px;
+        color: #fff;
+        letter-spacing: -0.01em;
+      }
+      .iphone-render .ss-module-desc {
+        font-size: 28px;
+        color: var(--color-ink-muted);
+        margin-top: 4px;
+      }
+      .iphone-render .geo-accent {
+        position: absolute;
+        z-index: 1;
+        border-radius: 50%;
+        opacity: 0.04;
+        background: #fff;
+      }
+      .iphone-render .geo-1 {
+        width: 600px;
+        height: 600px;
+        top: -200px;
+        right: -200px;
+      }
+      .iphone-render .geo-2 {
+        width: 400px;
+        height: 400px;
+        bottom: 400px;
+        left: -150px;
+      }
+
+      /* ═══ iPad render sizes ═══ */
+      .ipad-render .ss-card {
+        padding: 220px 160px 240px;
+        justify-content: center;
+        align-items: flex-start;
+      }
+      .ipad-render .ss-headline {
+        font-family: var(--font-display);
+        font-size: 160px;
+        font-weight: 700;
+        letter-spacing: -0.04em;
+        line-height: 1;
+        color: #fff;
+        z-index: 2;
+        margin-bottom: 40px;
+      }
+      .ipad-render .ss-subheadline {
+        font-family: var(--font-body);
+        font-size: 56px;
+        font-weight: 400;
+        line-height: 1.5;
+        color: var(--color-ink-muted);
+        z-index: 2;
+        max-width: 1500px;
+      }
+      .ipad-render .ss-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 16px;
+        padding: 28px 56px;
+        border-radius: var(--radius-pill);
+        font-size: 40px;
+        font-weight: 600;
+        margin-bottom: 56px;
+        z-index: 2;
+        border: 1px solid var(--color-glass-border);
+      }
+      .ipad-render .ss-feature-list {
+        list-style: none;
+        z-index: 2;
+        margin-top: 80px;
+        width: 100%;
+      }
+      .ipad-render .ss-feature-list li {
+        font-size: 64px;
+        font-weight: 500;
+        padding: 52px 48px;
+        margin-bottom: 20px;
+        border-radius: 32px;
+        background: var(--color-glass);
+        border: 1px solid var(--color-glass-border);
+        display: flex;
+        align-items: center;
+        gap: 40px;
+        color: rgba(255, 255, 255, 0.9);
+      }
+      .ipad-render .ss-icon {
+        font-size: 80px;
+      }
+      .ipad-render .ss-stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 36px;
+        width: 100%;
+        margin-top: 100px;
+        z-index: 2;
+      }
+      .ipad-render .ss-stat-card {
+        background: var(--color-glass);
+        border: 1px solid var(--color-glass-border);
+        border-radius: 36px;
+        padding: 80px 56px;
+        text-align: center;
+      }
+      .ipad-render .ss-stat-number {
+        font-family: var(--font-display);
+        font-size: 120px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.03em;
+      }
+      .ipad-render .ss-stat-label {
+        font-size: 40px;
+        font-weight: 500;
+        color: var(--color-ink-muted);
+        margin-top: 14px;
+      }
+      .ipad-render .ss-module-cards {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+        margin-top: 80px;
+        z-index: 2;
+      }
+      .ipad-render .ss-module-card {
+        background: var(--color-glass);
+        border: 1px solid var(--color-glass-border);
+        border-radius: 36px;
+        padding: 56px 60px;
+        display: flex;
+        align-items: center;
+        gap: 44px;
+      }
+      .ipad-render .ss-module-emoji {
+        font-size: 72px;
+      }
+      .ipad-render .ss-module-title {
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: 48px;
+        color: #fff;
+        letter-spacing: -0.01em;
+      }
+      .ipad-render .ss-module-desc {
+        font-size: 34px;
+        color: var(--color-ink-muted);
+        margin-top: 6px;
+      }
+      .ipad-render .geo-accent {
+        position: absolute;
+        z-index: 1;
+        border-radius: 50%;
+        opacity: 0.04;
+        background: #fff;
+      }
+      .ipad-render .geo-1 {
+        width: 800px;
+        height: 800px;
+        top: -200px;
+        right: -250px;
+      }
+      .ipad-render .geo-2 {
+        width: 500px;
+        height: 500px;
+        bottom: 300px;
+        left: -150px;
+      }
+
+      /* ─── Layout variations ─── */
+      .layout-centered .ss-card {
+        align-items: center;
+        text-align: center;
+      }
+      .layout-centered .ss-headline {
+        text-align: center;
+      }
+      .layout-centered .ss-subheadline {
+        text-align: center;
+      }
+      .iphone-render .ss-card.has-mockup {
+        justify-content: flex-start;
+        padding-top: 180px;
+        padding-bottom: 0;
+      }
+      .ipad-render .ss-card.has-mockup {
+        justify-content: flex-start;
+        padding-top: 200px;
+        padding-bottom: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="controls">
+      <h1>Quant Academy — Screenshots</h1>
+      <button class="btn btn-primary" onclick="downloadAllAsZip()">
+        Download All (.zip)
+      </button>
+      <button class="btn btn-secondary" onclick="downloadiPhone()">
+        iPhone
+      </button>
+      <button class="btn btn-secondary" onclick="downloadiPad()">iPad</button>
+      <div class="progress-bar" id="progressBar">
+        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+      </div>
+      <span class="status" id="statusText"></span>
+    </div>
+
+    <div class="content">
+      <h2 class="section-title">iPhone <span>1284 × 2778px</span></h2>
+      <div class="screenshots-grid" id="iphonePreview"></div>
+      <h2 class="section-title">iPad <span>2048 × 2732px</span></h2>
+      <div class="screenshots-grid" id="ipadPreview"></div>
+    </div>
+
+    <div id="renderContainer" class="render-target"></div>
+
+    <script>
+      const APP_ICON_URL = "../assets/images/splash-icon.png";
+
+      const screenshotData = [
+        {
+          id: 1,
+          headline: "Master\nQuant\nTrading",
+          subheadline:
+            "The math. The code. The strategies.\nFrom zero to Wall Street-ready.",
+          badge: { text: "Quant Academy", bg: "rgba(59,130,246,0.15)" },
+          type: "hero",
+          layout: "left",
+        },
+        {
+          id: 2,
+          headline: "10 Modules.\nOne Path.",
+          subheadline:
+            "A structured learning journey from market basics to advanced quantitative research.",
+          type: "modules",
+          layout: "left",
+          modules: [
+            { icon: "📈", title: "Markets 101", desc: "How markets work" },
+            {
+              icon: "🎲",
+              title: "Probability",
+              desc: "Expected value & distributions",
+            },
+            {
+              icon: "📊",
+              title: "Statistics",
+              desc: "Correlation & regression",
+            },
+            { icon: "🐍", title: "Python for Quants", desc: "NumPy & Pandas" },
+            { icon: "⚡", title: "Backtesting", desc: "Strategy testing" },
+          ],
+        },
+        {
+          id: 3,
+          headline: "Learn\nby Doing",
+          subheadline:
+            "Interactive simulations that make complex concepts click instantly.",
+          type: "features",
+          layout: "left",
+          features: [
+            { icon: "🏗️", text: "Strategy Builder" },
+            { icon: "📖", text: "Order Book Sim" },
+            { icon: "🎯", text: "Coin Toss Lab" },
+            { icon: "📊", text: "Stock Comparison" },
+            { icon: "🏦", text: "Exchange Sim" },
+          ],
+        },
+        {
+          id: 4,
+          headline: "Backtest\nReal Data",
+          subheadline:
+            "Create conditions. Run against Nifty 50.\nSee what actually works.",
+          badge: { text: "Strategy Builder", bg: "rgba(245,158,11,0.15)" },
+          type: "hero",
+          layout: "left",
+        },
+        {
+          id: 5,
+          headline: "Ace the\nInterview",
+          subheadline:
+            "Practice what HRT, Jane Street,\nand Citadel actually ask.",
+          type: "features",
+          layout: "left",
+          features: [
+            { icon: "💻", text: "Coding" },
+            { icon: "🎲", text: "Probability" },
+            { icon: "🧮", text: "Mental Math" },
+            { icon: "💡", text: "Brain Teasers" },
+            { icon: "⚙️", text: "Systems" },
+          ],
+        },
+        {
+          id: 6,
+          headline: "Track\nProgress",
+          subheadline: "XP. Levels. Achievements.\nStay motivated as you grow.",
+          type: "stats",
+          layout: "left",
+          stats: [
+            { number: "100+", label: "Lessons" },
+            { number: "50+", label: "Problems" },
+            { number: "15", label: "Achievements" },
+            { number: "10", label: "Levels" },
+          ],
+        },
+        {
+          id: 7,
+          headline: "Math,\nSimplified",
+          subheadline:
+            "Linear algebra, calculus, stochastic processes — visual, intuitive, hands-on.",
+          type: "modules",
+          layout: "left",
+          modules: [
+            { icon: "🔢", title: "Linear Algebra", desc: "Vectors & matrices" },
+            { icon: "📐", title: "Calculus", desc: "Derivatives & integrals" },
+            { icon: "📈", title: "Optimization", desc: "Min/max problems" },
+            { icon: "🎲", title: "Stochastic", desc: "Random processes" },
+          ],
+        },
+        {
+          id: 8,
+          headline: "Deep\nMarket\nKnowledge",
+          subheadline: "Order books. Market making.\nSlippage. Latency. HFT.",
+          badge: { text: "Advanced", bg: "rgba(236,72,153,0.15)" },
+          type: "hero",
+          layout: "left",
+        },
+        {
+          id: 9,
+          headline: "Level Up.\nEvery Day.",
+          subheadline:
+            "Gamified learning that keeps you\ncoming back for more.",
+          type: "stats",
+          layout: "left",
+          stats: [
+            { number: "🏆", label: "Achievements" },
+            { number: "⚡", label: "XP System" },
+            { number: "📊", label: "Progress" },
+            { number: "🎯", label: "Streaks" },
+          ],
+        },
+        {
+          id: 10,
+          headline: "Free.\nForever.",
+          subheadline:
+            "No subscriptions. No paywalls.\nPure knowledge. Start today.",
+          badge: { text: "100% Free", bg: "rgba(16,185,129,0.15)" },
+          type: "hero",
+          layout: "centered",
+        },
+      ];
+
+      function generateScreenshotHTML(data, isIpad = false) {
+        let inner = "";
+
+        if (data.badge) {
+          inner += `<div class="ss-badge" style="background:${data.badge.bg};color:rgba(255,255,255,0.9);">${data.badge.text}</div>`;
+        }
+
+        inner += `<div class="ss-headline">${data.headline.replace(/\n/g, "<br>")}</div>`;
+        inner += `<div class="ss-subheadline">${data.subheadline.replace(/\n/g, "<br>")}</div>`;
+
+        if (data.type === "features" && data.features) {
+          inner += '<ul class="ss-feature-list">';
+          data.features.forEach((f) => {
+            inner += `<li><span class="ss-icon">${f.icon}</span> ${f.text}</li>`;
+          });
+          inner += "</ul>";
+        }
+
+        if (data.type === "stats" && data.stats) {
+          inner += '<div class="ss-stats-grid">';
+          data.stats.forEach((s) => {
+            inner += `<div class="ss-stat-card"><div class="ss-stat-number">${s.number}</div><div class="ss-stat-label">${s.label}</div></div>`;
+          });
+          inner += "</div>";
+        }
+
+        if (data.type === "modules" && data.modules) {
+          inner += '<div class="ss-module-cards">';
+          data.modules.forEach((m) => {
+            inner += `<div class="ss-module-card"><span class="ss-module-emoji">${m.icon}</span><div><div class="ss-module-title">${m.title}</div><div class="ss-module-desc">${m.desc}</div></div></div>`;
+          });
+          inner += "</div>";
+        }
+
+        if (data.type === "hero") {
+          inner += `<div class="ss-mockup-area">
+                <div class="ss-mockup-phone"><div class="ss-mockup-inner">
+                    <div class="ss-mockup-bar short"></div>
+                    <div class="ss-mockup-bar long"></div>
+                    <div class="ss-mockup-bar med"></div>
+                    <div class="ss-mockup-card-row"><div class="ss-mockup-mini-card"></div><div class="ss-mockup-mini-card"></div></div>
+                    <div class="ss-mockup-bar long"></div>
+                    <div class="ss-mockup-bar med"></div>
+                    <div class="ss-mockup-card-row"><div class="ss-mockup-mini-card"></div><div class="ss-mockup-mini-card"></div><div class="ss-mockup-mini-card"></div></div>
+                    <div class="ss-mockup-bar short"></div>
+                    <div class="ss-mockup-bar long"></div>
+                </div></div>
+            </div>`;
+        }
+
+        inner += `<div class="geo-accent geo-1"></div><div class="geo-accent geo-2"></div>`;
+        inner += `<div class="ss-bottom-bar"><div class="ss-app-icon"><img src="${APP_ICON_URL}" alt=""></div><div class="ss-app-name">Quant Academy</div></div>`;
+
+        const layoutClass = data.layout === "centered" ? "layout-centered" : "";
+        const mockupClass = data.type === "hero" ? "has-mockup" : "";
+        return `<div class="ss-card ss-${data.id} ${layoutClass} ${mockupClass}">${inner}</div>`;
+      }
+
+      function createPreview(container, isIpad) {
+        const el = document.getElementById(container);
+        const scale = isIpad ? 340 / 2048 : 270 / 1284;
+        const w = isIpad ? 2048 : 1284;
+        const h = isIpad ? 2732 : 2778;
+        screenshotData.forEach((data) => {
+          const wrapper = document.createElement("div");
+          wrapper.className = "screenshot-wrapper";
+          const frame = document.createElement("div");
+          frame.className = isIpad ? "ipad-frame" : "iphone-frame";
+          const renderDiv = document.createElement("div");
+          renderDiv.className = isIpad ? "ipad-render" : "iphone-render";
+          renderDiv.innerHTML = generateScreenshotHTML(data, isIpad);
+          renderDiv.style.transform = `scale(${scale})`;
+          renderDiv.style.transformOrigin = "top left";
+          renderDiv.style.width = w + "px";
+          renderDiv.style.height = h + "px";
+          frame.appendChild(renderDiv);
+          wrapper.appendChild(frame);
+          const label = document.createElement("div");
+          label.className = "screenshot-label";
+          label.textContent = `${data.id}. ${data.headline.replace(/\n/g, " ")}`;
+          wrapper.appendChild(label);
+          el.appendChild(wrapper);
+        });
+      }
+
+      async function captureScreenshot(data, isIpad) {
+        const div = document.createElement("div");
+        div.className = isIpad ? "ipad-render" : "iphone-render";
+        div.innerHTML = generateScreenshotHTML(data, isIpad);
+        div.style.position = "fixed";
+        div.style.left = "0";
+        div.style.top = "0";
+        div.style.zIndex = "-9999";
+        document.body.appendChild(div);
+        await new Promise((r) => setTimeout(r, 200));
+        const canvas = await html2canvas(div, {
+          width: isIpad ? 2048 : 1284,
+          height: isIpad ? 2732 : 2778,
+          scale: 1,
+          useCORS: true,
+          backgroundColor: null,
+        });
+        div.remove();
+        return canvas.toDataURL("image/png");
+      }
+
+      async function downloadAllAsZip() {
+        await generateZip("all");
+      }
+      async function downloadiPhone() {
+        await generateZip("iphone");
+      }
+      async function downloadiPad() {
+        await generateZip("ipad");
+      }
+
+      async function generateZip(type) {
+        const btns = document.querySelectorAll(".btn");
+        btns.forEach((b) => (b.disabled = true));
+        const bar = document.getElementById("progressBar");
+        const fill = document.getElementById("progressFill");
+        const status = document.getElementById("statusText");
+        bar.classList.add("active");
+        fill.style.width = "0%";
+        const zip = new JSZip();
+        const iphoneFolder = zip.folder("iPhone_1284x2778");
+        const ipadFolder = zip.folder("iPad_2048x2732");
+        const total = type === "all" ? 20 : 10;
+        let done = 0;
+
+        if (type === "all" || type === "iphone") {
+          for (const data of screenshotData) {
+            status.textContent = `iPhone ${data.id}/10`;
+            const dataUrl = await captureScreenshot(data, false);
+            iphoneFolder.file(
+              `${String(data.id).padStart(2, "0")}_${data.headline.replace(/\n/g, "_").replace(/[^a-zA-Z0-9_]/g, "")}.png`,
+              dataUrl.split(",")[1],
+              { base64: true },
+            );
+            done++;
+            fill.style.width = `${(done / total) * 100}%`;
+          }
+        }
+        if (type === "all" || type === "ipad") {
+          for (const data of screenshotData) {
+            status.textContent = `iPad ${data.id}/10`;
+            const dataUrl = await captureScreenshot(data, true);
+            ipadFolder.file(
+              `${String(data.id).padStart(2, "0")}_${data.headline.replace(/\n/g, "_").replace(/[^a-zA-Z0-9_]/g, "")}.png`,
+              dataUrl.split(",")[1],
+              { base64: true },
+            );
+            done++;
+            fill.style.width = `${(done / total) * 100}%`;
+          }
+        }
+
+        status.textContent = "Zipping...";
+        const content = await zip.generateAsync({ type: "blob" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(content);
+        a.download = `QuantAcademy_Screenshots_${type}.zip`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+        status.textContent = "Done";
+        fill.style.width = "100%";
+        btns.forEach((b) => (b.disabled = false));
+        setTimeout(() => {
+          bar.classList.remove("active");
+          status.textContent = "";
+        }, 2500);
+      }
+
+      createPreview("iphonePreview", false);
+      createPreview("ipadPreview", true);
+    </script>
+  </body>
+</html>
