@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "learn-quant-trading",
+    "name": "Quant Academy",
     "slug": "learn-quant-trading",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -34,7 +34,8 @@
             "imageWidth": 76
           }
         }
-      ]
+      ],
+      "expo-sqlite"
     ],
     "experiments": {
       "typedRoutes": true,
