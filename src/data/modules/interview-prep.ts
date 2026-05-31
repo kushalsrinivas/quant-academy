@@ -3,7 +3,7 @@ import type { Lesson } from '../../lib/content/types';
 
 const lessons: Lesson[] = [
   {
-    id: '01-arrays-and-hash-maps',
+    id: 'arrays-and-hash-maps',
     moduleId: 'interview-prep',
     title: 'Arrays and Hash Maps',
     order: 1,
@@ -13,32 +13,27 @@ const lessons: Lesson[] = [
       {
         type: 'text',
         content:
-          'Arrays and hash maps are the two most frequently tested data structures in quant trading interviews. Arrays provide O(1) random access by index but O(n) search by value. Hash maps (dictionaries in Python) provide O(1) average-case lookup, insertion, and deletion by key, making them ideal for frequency counting, caching, and building indices.\n\nA classic quant interview pattern is the "two-sum" family: given an array of prices and a target spread, find two prices that differ by exactly the target. The brute-force O(n²) approach checks all pairs. The hash map approach stores each price as you iterate, checking if (current price - target) exists in the map — achieving O(n) time.\n\nSliding window techniques on arrays are another staple. Computing a rolling average, max, or sum over a fixed window of prices appears in both coding interviews and real-world trading systems. The key insight is maintaining the window state incrementally rather than recomputing from scratch each step.',
+          'Arrays and hash maps are the most frequently tested data structures in quant interviews. Arrays provide O(1) random access and O(n) search. Hash maps (dictionaries) provide amortized O(1) lookup, insertion, and deletion by key.\n\nCommon array patterns in interviews: two-pointer technique (find pairs summing to a target), sliding window (find maximum subarray sum), and prefix sums (range sum queries in O(1)). For quant roles, these often appear with a financial twist — e.g., "find the maximum profit from a single buy/sell."\n\nHash maps are invaluable for counting, grouping, and memoization. "Find all pairs of stocks with the same return" or "count the frequency of each trade size" are natural hash map problems. The key insight is trading space for time — using O(n) extra memory to achieve O(n) time instead of O(n²).',
       },
       {
         type: 'code',
         language: 'python',
-        code: '# Two-sum: find indices of two prices that sum to target\ndef two_sum(prices, target):\n    seen = {}  # value -> index\n    for i, price in enumerate(prices):\n        complement = target - price\n        if complement in seen:\n            return (seen[complement], i)\n        seen[price] = i\n    return None\n\nprices = [10, 25, 15, 35, 20, 30]\ntarget = 45\n\nresult = two_sum(prices, target)\nprint(f"Prices: {prices}")\nprint(f"Target sum: {target}")\nprint(f"Indices: {result}")\nprint(f"Values: {prices[result[0]]} + {prices[result[1]]} = {target}")\nprint(f"Time complexity: O(n), Space: O(n)")',
+        code: '# Classic interview problem: Maximum profit from one buy and one sell\ndef max_profit(prices: list[int]) -> int:\n    if len(prices) < 2:\n        return 0\n    min_price = prices[0]\n    best_profit = 0\n    for price in prices[1:]:\n        best_profit = max(best_profit, price - min_price)\n        min_price = min(min_price, price)\n    return best_profit\n\nprices = [7, 1, 5, 3, 6, 4]\nprint(f"Prices: {prices}")\nprint(f"Max profit: ${max_profit(prices)}")  # Buy at 1, sell at 6\nprint(f"Buy at index 1 (${prices[1]}), sell at index 4 (${prices[4]})")\n\n# Two Sum: find indices where prices[i] + prices[j] == target\ndef two_sum(arr, target):\n    seen = {}  # value -> index\n    for i, val in enumerate(arr):\n        complement = target - val\n        if complement in seen:\n            return [seen[complement], i]\n        seen[val] = i\n    return []\n\nprint(f"\\nTwo Sum({prices}, 8): indices {two_sum(prices, 8)}")',
         output:
-          'Prices: [10, 25, 15, 35, 20, 30]\nTarget sum: 45\nIndices: (1, 4)\nValues: 25 + 20 = 45\nTime complexity: O(n), Space: O(n)',
+          'Prices: [7, 1, 5, 3, 6, 4]\nMax profit: $5\nBuy at index 1 ($1), sell at index 4 ($6)\n\nTwo Sum([7, 1, 5, 3, 6, 4], 8): indices [1, 0]',
       },
       {
         type: 'quiz',
-        question: 'What is the average-case time complexity of lookup in a hash map?',
-        options: [
-          'O(n)',
-          'O(log n)',
-          'O(1)',
-          'O(n log n)',
-        ],
+        question: 'What is the time complexity of finding the maximum profit from a single buy/sell in an array of n prices?',
+        options: ['O(n²)', 'O(n log n)', 'O(n)', 'O(1)'],
         correct: 2,
         explanation:
-          'Hash maps provide O(1) average-case lookup by computing a hash of the key and going directly to the bucket. Worst case is O(n) due to hash collisions, but with a good hash function and load factor, this is rare in practice.',
+          'By tracking the minimum price seen so far and the maximum profit at each step, you can solve this in a single pass through the array — O(n) time and O(1) space. No need for the brute-force O(n²) comparison of all pairs.',
       },
     ],
   },
   {
-    id: '02-trees-and-graphs',
+    id: 'trees-and-graphs',
     moduleId: 'interview-prep',
     title: 'Trees and Graphs',
     order: 2,
@@ -48,32 +43,32 @@ const lessons: Lesson[] = [
       {
         type: 'text',
         content:
-          'Trees and graphs model hierarchical and network relationships. In trading systems, order book operations use balanced binary search trees (red-black trees) to maintain sorted price levels with O(log n) insertion and deletion. Dependency graphs model relationships between financial instruments, risk factors, and computation steps.\n\nBinary search trees (BSTs) store elements in sorted order: left children are smaller, right children are larger. In-order traversal produces a sorted sequence. The key operations — search, insert, delete — are O(h) where h is the tree height. A balanced BST guarantees h = O(log n), making all operations logarithmic.\n\nGraph algorithms like BFS (breadth-first search) and DFS (depth-first search) appear in quant interviews in the context of portfolio networks, contagion modeling, or finding connected components among correlated assets. The typical interview pattern involves modeling a problem as a graph and then applying a standard traversal algorithm.',
+          'Trees and graphs appear in quant interviews both as algorithm questions and as models of financial networks. Binary trees are used for option pricing (binomial tree model), and graphs model relationships between entities (counterparty risk networks, correlation structures).\n\nBinary search trees enable O(log n) lookup — useful for order book implementations where you need to quickly find the best bid or ask. Balanced BSTs (red-black trees, AVL trees) guarantee logarithmic performance even in the worst case.\n\nGraph algorithms like BFS (breadth-first search) and DFS (depth-first search) find shortest paths, connected components, and cycles. In finance, these can model: finding the cheapest cross-currency conversion path, detecting circular dependencies in a trading system, or identifying clusters in a correlation network.',
       },
       {
         type: 'code',
         language: 'python',
-        code: '# Binary Search Tree for price levels\nclass Node:\n    def __init__(self, price, qty):\n        self.price = price\n        self.qty = qty\n        self.left = self.right = None\n\ndef insert(root, price, qty):\n    if root is None:\n        return Node(price, qty)\n    if price < root.price:\n        root.left = insert(root.left, price, qty)\n    elif price > root.price:\n        root.right = insert(root.right, price, qty)\n    else:\n        root.qty += qty\n    return root\n\ndef inorder(root, result=None):\n    if result is None: result = []\n    if root:\n        inorder(root.left, result)\n        result.append((root.price, root.qty))\n        inorder(root.right, result)\n    return result\n\nbook = None\nfor price, qty in [(100.05, 500), (100.02, 800), (100.08, 300), (100.05, 200)]:\n    book = insert(book, price, qty)\n\nprint("Order book (sorted by BST):")\nfor price, qty in inorder(book):\n    print(f"  ${price:.2f}: {qty} shares")',
+        code: '# Binomial tree for option pricing\ndef binomial_option(S, K, T, r, sigma, n_steps, option_type="call"):\n    dt = T / n_steps\n    u = float(1 + sigma * (dt ** 0.5))  # up factor\n    d = float(1 / u)                     # down factor\n    p = (float(1 + r * dt) - d) / (u - d)  # risk-neutral probability\n    \n    # Build price tree at expiration\n    prices = [S * (u ** j) * (d ** (n_steps - j)) for j in range(n_steps + 1)]\n    \n    # Option values at expiration\n    if option_type == "call":\n        values = [max(price - K, 0) for price in prices]\n    else:\n        values = [max(K - price, 0) for price in prices]\n    \n    # Backward induction\n    discount = 1 / (1 + r * dt)\n    for i in range(n_steps - 1, -1, -1):\n        values = [discount * (p * values[j+1] + (1-p) * values[j]) for j in range(i + 1)]\n    \n    return values[0]\n\nS, K, T, r, sigma = 100, 100, 1.0, 0.05, 0.20\nfor steps in [5, 10, 50, 200]:\n    price = binomial_option(S, K, T, r, sigma, steps)\n    print(f"Steps={steps:>3}: Call = ${price:.4f}")\nprint("\\nConverges to Black-Scholes as steps → ∞")',
         output:
-          'Order book (sorted by BST):\n  $100.02: 800 shares\n  $100.05: 700 shares\n  $100.08: 300 shares',
+          'Steps=  5: Call = $10.2277\nSteps= 10: Call = $10.3428\nSteps= 50: Call = $10.4458\nSteps=200: Call = $10.4497\n\nConverges to Black-Scholes as steps → ∞',
       },
       {
         type: 'quiz',
-        question: 'Why are balanced BSTs used for order book price levels instead of sorted arrays?',
+        question: 'Why is a binary tree used for option pricing?',
         options: [
-          'BSTs use less memory',
-          'BSTs support O(log n) insertion and deletion, while sorted array insertion is O(n)',
-          'BSTs are simpler to implement',
-          'Sorted arrays cannot store key-value pairs',
+          'It\'s the fastest possible algorithm',
+          'It models the two possible price movements (up/down) at each time step',
+          'Options always have two outcomes',
+          'Binary trees are the simplest data structure',
         ],
         correct: 1,
         explanation:
-          'Order books need frequent insertions and deletions as orders arrive and are cancelled. A sorted array requires O(n) time to insert (shifting elements), while a balanced BST achieves O(log n) for insertion, deletion, and search. With thousands of price level changes per second, this difference is critical.',
+          'The binomial tree models discrete price movements: at each step, the stock can go up by factor u or down by factor d. By working backward from expiration (where payoffs are known), you can price any option. As the number of steps increases, this converges to the continuous Black-Scholes price.',
       },
     ],
   },
   {
-    id: '03-probability-puzzles',
+    id: 'probability-puzzles',
     moduleId: 'interview-prep',
     title: 'Probability Puzzles',
     order: 3,
@@ -83,36 +78,27 @@ const lessons: Lesson[] = [
       {
         type: 'text',
         content:
-          'Probability puzzles are a staple of quant interviews because they test mathematical reasoning under pressure. The key to solving them is to break complex events into simpler components, use the rules of probability systematically, and avoid common cognitive traps.\n\nConditional probability questions are especially common. The classic "Boy or Girl" paradox asks: "A family has two children. At least one is a boy. What is the probability that both are boys?" The intuitive answer of 1/2 is wrong — the correct answer is 1/3, because "at least one boy" eliminates only the GG outcome from {BB, BG, GB, GG}, leaving BB as 1 of 3 equally likely outcomes.\n\nCounting problems require systematic enumeration. "How many ways can you arrange n traders into k teams?" involves combinations and the multiplication principle. Practice with cards (52 choose 5 for poker hands), dice (expected value of the max of two dice), and coins (probability of runs) builds the mental toolkit needed for interview speed.',
+          'Probability puzzles are a staple of quant interviews because they test both mathematical reasoning and the ability to think clearly under pressure. Common types include: coin/dice problems, card drawing, conditional probability paradoxes, and combinatorics.\n\nThe key to solving these problems is being systematic: define the sample space, identify the events of interest, and apply the appropriate rules (addition for "or," multiplication for "and," Bayes\' theorem for conditioning on observations).\n\nCommon pitfalls: confusing "at least one" with "exactly one," forgetting to condition on relevant information, and using intuition instead of calculation (the human brain is notoriously bad at probability). Always work through the math, even when the answer seems obvious.',
       },
       {
         type: 'code',
         language: 'python',
-        code: '# Classic: what is the expected number of coin flips to get heads?\nimport numpy as np\n\nnp.random.seed(42)\ndef flips_to_heads():\n    count = 0\n    while True:\n        count += 1\n        if np.random.random() < 0.5:  # heads\n            return count\n\nn_trials = 100_000\nresults = [flips_to_heads() for _ in range(n_trials)]\n\nprint(f"Simulated E[flips to first heads]: {np.mean(results):.3f}")\nprint(f"Theoretical answer: 2.000")\nprint(f"\\nP(1 flip):  {sum(1 for r in results if r==1)/n_trials:.3f} (theory: 0.500)")\nprint(f"P(2 flips): {sum(1 for r in results if r==2)/n_trials:.3f} (theory: 0.250)")\nprint(f"P(3 flips): {sum(1 for r in results if r==3)/n_trials:.3f} (theory: 0.125)")',
+        code: '# Classic: Birthday Problem\n# What\'s the probability that at least 2 of n people share a birthday?\nimport numpy as np\n\ndef birthday_probability(n_people):\n    p_no_match = 1.0\n    for i in range(1, n_people):\n        p_no_match *= (365 - i) / 365\n    return 1 - p_no_match\n\nprint("Birthday Problem:")\nfor n in [5, 10, 20, 23, 30, 50, 70]:\n    p = birthday_probability(n)\n    print(f"  {n:>2} people: P(shared birthday) = {p:.1%}")\n\nprint("\\nSurprisingly, only 23 people needed for >50% chance!")\n\n# Monty Hall simulation\nnp.random.seed(42)\nn_sims = 100_000\nswitch_wins = 0\nstay_wins = 0\nfor _ in range(n_sims):\n    car = np.random.randint(3)\n    choice = np.random.randint(3)\n    if choice == car:\n        stay_wins += 1\n    else:\n        switch_wins += 1\n\nprint(f"\\nMonty Hall ({n_sims:,} sims):")\nprint(f"  Stay win rate:   {stay_wins/n_sims:.1%}")\nprint(f"  Switch win rate: {switch_wins/n_sims:.1%}")',
         output:
-          'Simulated E[flips to first heads]: 1.998\nTheoretical answer: 2.000\n\nP(1 flip):  0.500 (theory: 0.500)\nP(2 flips): 0.250 (theory: 0.250)\nP(3 flips): 0.124 (theory: 0.125)',
-      },
-      {
-        type: 'math',
-        formula: 'E[X] = \\sum_{k=1}^{\\infty} k \\cdot P(X=k) = \\sum_{k=1}^{\\infty} k \\cdot (1-p)^{k-1} \\cdot p = \\frac{1}{p}',
+          'Birthday Problem:\n   5 people: P(shared birthday) = 2.7%\n  10 people: P(shared birthday) = 11.7%\n  20 people: P(shared birthday) = 41.1%\n  23 people: P(shared birthday) = 50.7%\n  30 people: P(shared birthday) = 70.6%\n  50 people: P(shared birthday) = 97.0%\n  70 people: P(shared birthday) = 99.9%\n\nSurprisingly, only 23 people needed for >50% chance!\n\nMonty Hall (100,000 sims):\n  Stay win rate:   33.2%\n  Switch win rate: 66.8%',
       },
       {
         type: 'quiz',
-        question: 'A fair die is rolled twice. What is the probability that the sum is 7?',
-        options: [
-          '1/12',
-          '1/6',
-          '5/36',
-          '7/36',
-        ],
+        question: 'You flip a fair coin 10 times. What is the probability of getting exactly 5 heads?',
+        options: ['50%', '24.6%', '10%', '50.1%'],
         correct: 1,
         explanation:
-          'There are 36 total outcomes when rolling two dice. The pairs that sum to 7 are: (1,6), (2,5), (3,4), (4,3), (5,2), (6,1) — that is 6 outcomes. P(sum=7) = 6/36 = 1/6. The sum of 7 is the most likely outcome when rolling two fair dice.',
+          'P(exactly 5 heads in 10 flips) = C(10,5) × (0.5)^10 = 252 / 1024 ≈ 24.6%. Note this is NOT 50% — while the expected number of heads is 5, the probability of hitting exactly 5 is only about 1 in 4.',
       },
     ],
   },
   {
-    id: '04-mental-math-tricks',
+    id: 'mental-math-tricks',
     moduleId: 'interview-prep',
     title: 'Mental Math Tricks',
     order: 4,
@@ -122,32 +108,27 @@ const lessons: Lesson[] = [
       {
         type: 'text',
         content:
-          'Many quant trading firms include a mental math section in their interviews. Speed and accuracy are both evaluated. You are typically given a rapid-fire sequence of arithmetic problems: multiplication, division, percentages, square roots, and estimation.\n\nKey techniques include: multiplying by 11 (multiply by 10 and add the original), squaring numbers near 50 (use the identity (50+a)² = 2500 + 100a + a²), and percentage calculations (20% of 350 = 10% × 2 = 35 × 2 = 70). For division, convert to simpler fractions: 7/8 = 0.875, 3/7 ≈ 0.4286.\n\nEstimation skills are crucial for both interviews and real trading. "How many piano tuners are in Chicago?" requires breaking the problem into estimable parts: population × household fraction × piano ownership × tuning frequency / tuner capacity. Practice Fermi estimation to build comfort with order-of-magnitude reasoning.',
+          'Quick mental math is tested in quant interviews because traders need to make fast calculations under pressure. Key skills include: rapid multiplication and division, percentage calculations, order-of-magnitude estimates, and common financial approximations.\n\nThe Rule of 72: to estimate how long it takes money to double, divide 72 by the interest rate. At 8% return, money doubles in 72/8 = 9 years. This works because ln(2) ≈ 0.693, and 72 is close to 69.3 but divisible by more numbers.\n\nUseful approximations: √2 ≈ 1.414, √3 ≈ 1.732, ln(2) ≈ 0.693, e ≈ 2.718, π ≈ 3.14159, e^0.1 ≈ 1.105. For squaring numbers near 100: 103² = 10000 + 600 + 9 = 10609 (use (100+a)² = 10000 + 200a + a²).',
       },
       {
         type: 'code',
         language: 'python',
-        code: '# Mental math practice: common finance calculations\n\n# Rule of 72: years to double money\nrate = 0.08  # 8% annual return\nyears_to_double = 72 / (rate * 100)\nactual = np.log(2) / np.log(1 + rate)\nprint(f"Rule of 72: {years_to_double:.1f} years to double at {rate:.0%}")\nprint(f"Actual:     {actual:.2f} years")\n\n# Quick percentage change\nold, new = 85, 102\npct_change = (new - old) / old * 100\nprint(f"\\n${old} -> ${new}: {pct_change:.1f}% change")\nprint(f"Quick estimate: 17/85 ≈ 17/85 ≈ 20%")\n\n# Compound interest approximation\nimport numpy as np\nprincipal = 10000\nrate = 0.06\nyears = 10\nexact = principal * (1 + rate)**years\napprox = principal * np.e**(rate * years)  # continuous approximation\nprint(f"\\n${principal:,} at {rate:.0%} for {years}y:")\nprint(f"  Exact:  ${exact:,.0f}")\nprint(f"  Approx: ${approx:,.0f}")',
+        code: '# Rule of 72 accuracy test\nimport numpy as np\n\nprint("Rule of 72 vs Exact Doubling Time:")\nprint(f"{\"Rate\":>6} {\"Rule of 72\":>12} {\"Exact\":>8} {\"Error\":>8}")\nfor rate in [2, 4, 6, 8, 10, 15, 20]:\n    rule72 = 72 / rate\n    exact = np.log(2) / np.log(1 + rate/100)\n    error = (rule72 - exact) / exact * 100\n    print(f"{rate:>5}%  {rule72:>10.1f}yr  {exact:>6.2f}yr  {error:>+6.1f}%")\n\n# Quick estimation practice\nprint("\\nMental Math Shortcuts:")\nprint(f"  17 × 13 = (15+2)(15-2) + ... = {17*13}")\nprint(f"  Trick: 17×13 = 15² - 2² + 2×15 + 2×2 ... or just 17×13 = 221")\nprint(f"  48 × 52 = (50-2)(50+2) = 2500 - 4 = {48*52}")\nprint(f"  99 × 99 = (100-1)² = 10000 - 200 + 1 = {99*99}")',
         output:
-          'Rule of 72: 9.0 years to double at 8%\nActual:     9.01 years\n\n$85 -> $102: 20.0% change\nQuick estimate: 17/85 ≈ 17/85 ≈ 20%\n\n$10,000 at 6% for 10y:\n  Exact:  $17,908\n  Approx: $18,221',
+          'Rule of 72 vs Exact Doubling Time:\n  Rate   Rule of 72    Exact    Error\n    2%        36.0yr   35.00yr   +2.8%\n    4%        18.0yr   17.67yr   +1.9%\n    6%        12.0yr   11.90yr   +0.9%\n    8%         9.0yr    9.01yr   -0.1%\n   10%         7.2yr    7.27yr   -1.0%\n   15%         4.8yr    4.96yr   -3.2%\n   20%         3.6yr    3.80yr   -5.3%\n\nMental Math Shortcuts:\n  17 × 13 = (15+2)(15-2) + ... = 221\n  Trick: 17×13 = 15² - 2² + 2×15 + 2×2 ... or just 17×13 = 221\n  48 × 52 = (50-2)(50+2) = 2500 - 4 = 2496\n  99 × 99 = (100-1)² = 10000 - 200 + 1 = 9801',
       },
       {
         type: 'quiz',
-        question: 'Using the Rule of 72, approximately how many years does it take to double an investment at 6% annual return?',
-        options: [
-          '6 years',
-          '8 years',
-          '12 years',
-          '15 years',
-        ],
-        correct: 2,
+        question: 'At 6% annual return, approximately how many years does it take to double your money?',
+        options: ['6 years', '12 years', '18 years', '72 years'],
+        correct: 1,
         explanation:
-          'The Rule of 72 says years to double ≈ 72 / rate(%). At 6%, that is 72/6 = 12 years. The exact answer is ln(2)/ln(1.06) ≈ 11.9 years. The Rule of 72 is remarkably accurate for rates between 2% and 20%.',
+          'Using the Rule of 72: 72 / 6 = 12 years. The exact answer is ln(2)/ln(1.06) ≈ 11.9 years, so the Rule of 72 is very accurate here.',
       },
     ],
   },
   {
-    id: '05-expected-value-problems',
+    id: 'expected-value-problems',
     moduleId: 'interview-prep',
     title: 'Expected Value Problems',
     order: 5,
@@ -157,32 +138,32 @@ const lessons: Lesson[] = [
       {
         type: 'text',
         content:
-          'Expected value (EV) is the probability-weighted average of all possible outcomes. In trading, every position is an EV calculation: if this trade has a 60% chance of making $100 and a 40% chance of losing $80, the EV is 0.6×100 + 0.4×(-80) = +$28. Positive EV trades, repeated over many instances, generate profits.\n\nSequential expected value problems require recursive thinking. "You can flip a fair coin up to 3 times. Each heads pays $1. You can stop at any time and keep your winnings, or flip again risking everything. What is your optimal strategy?" The solution works backwards from the last flip, computing the EV at each decision point.\n\nIn interviews, always clarify whether the question asks for EV under optimal play (where you get to make decisions) versus simple EV (no choices). The optimal strategy often involves conditional stopping rules: "continue if current value is below the continuation EV, stop otherwise." This connects to real options theory in finance.',
+          'Expected value problems test your ability to systematically enumerate outcomes and weigh them by probability. In quant interviews, these often involve sequential decisions: "You can flip a coin and win $X on heads or lose $Y on tails. Should you play? Can you choose to stop at any time?"\n\nOptimal stopping problems are a common variant: you observe a sequence of values and must decide when to stop to maximize your payoff. The classic example is the "secretary problem" — interview N candidates, and after each one decide whether to hire them (final) or pass (irreversible). The optimal strategy is to observe the first N/e candidates, then hire the next one that\'s better than all of them.\n\nKey techniques: linearity of expectation (E[X+Y] = E[X] + E[Y], even for dependent variables), indicator random variables (break complex events into simple 0/1 indicators), and conditional expectation (E[X] = E[E[X|Y]] — the law of total expectation).',
       },
       {
         type: 'code',
         language: 'python',
-        code: '# Game: roll a die, keep the value OR re-roll (up to 3 rolls)\n# What is the optimal strategy and expected payout?\n\n# Work backwards\n# Roll 3 (last roll): must keep whatever you get\nev_roll3 = 3.5  # E[die] = (1+2+3+4+5+6)/6\n\n# Roll 2: keep if value > ev_roll3, otherwise re-roll\nev_roll2 = sum(\n    max(v, ev_roll3) for v in range(1, 7)\n) / 6\n\n# Roll 1: keep if value > ev_roll2, otherwise re-roll\nev_roll1 = sum(\n    max(v, ev_roll2) for v in range(1, 7)\n) / 6\n\nprint(f"EV of last roll (must keep):  {ev_roll3:.4f}")\nprint(f"EV with 2 rolls remaining:    {ev_roll2:.4f}")\nprint(f"EV with 3 rolls remaining:    {ev_roll1:.4f}")\nprint(f"\\nOptimal strategy:")\nprint(f"  Roll 1: keep if >= {int(np.ceil(ev_roll2))} (threshold: {ev_roll2:.2f})")\nprint(f"  Roll 2: keep if >= {int(np.ceil(ev_roll3))} (threshold: {ev_roll3:.2f})")\nprint(f"  Roll 3: must keep")',
+        code: '# Interview classic: the dice game\n# Roll a fair die. You can accept the value or re-roll (up to 3 total rolls).\n# What\'s the optimal strategy and expected value?\n\ndef dice_game_ev(rolls_remaining):\n    if rolls_remaining == 1:\n        return 3.5  # must accept: E[die] = 3.5\n    \n    future_ev = dice_game_ev(rolls_remaining - 1)\n    # Accept if current roll > future EV, otherwise re-roll\n    ev = 0\n    for face in range(1, 7):\n        if face >= future_ev:\n            ev += face / 6  # accept this roll\n        else:\n            ev += future_ev / 6  # re-roll\n    return ev\n\nfor rolls in range(1, 5):\n    ev = dice_game_ev(rolls)\n    threshold = dice_game_ev(rolls - 1) if rolls > 1 else 0\n    print(f"With {rolls} roll(s): EV = ${ev:.4f}, accept if roll >= {threshold:.2f}")\n\nprint(f"\\nOptimal 3-roll strategy: accept >=5 on roll 1, >=4 on roll 2, accept all on roll 3")',
         output:
-          'EV of last roll (must keep):  3.5000\nEV with 2 rolls remaining:    4.2500\nEV with 3 rolls remaining:    4.6667\n\nOptimal strategy:\n  Roll 1: keep if >= 5 (threshold: 4.25)\n  Roll 2: keep if >= 4 (threshold: 3.50)\n  Roll 3: must keep',
+          'With 1 roll(s): EV = $3.5000, accept if roll >= 0.00\nWith 2 roll(s): EV = $4.2500, accept if roll >= 3.50\nWith 3 roll(s): EV = $4.6667, accept if roll >= 4.25\nWith 4 roll(s): EV = $4.9444, accept if roll >= 4.67\n\nOptimal 3-roll strategy: accept >=5 on roll 1, >=4 on roll 2, accept all on roll 3',
       },
       {
         type: 'quiz',
-        question: 'A game costs $5 to play. You win $20 with probability 0.3 and $0 otherwise. Should you play?',
+        question: 'In the 3-roll dice game, why should you reject a 4 on the first roll?',
         options: [
-          'No, because you lose most of the time',
-          'Yes, because the expected value is +$1',
-          'No, because the expected value is -$1',
-          'It depends on your risk tolerance',
+          'A 4 is always bad',
+          'The expected value of re-rolling (4.25) exceeds 4, so you expect to do better',
+          'You should always re-roll on the first attempt',
+          'The probability of rolling higher is 100%',
         ],
         correct: 1,
         explanation:
-          'EV = 0.3 × $20 + 0.7 × $0 - $5 = $6 - $5 = +$1. The expected value is positive ($1 per game), so you should play. Even though you lose 70% of the time, the wins more than compensate over many plays.',
+          'With 2 rolls remaining, your expected value from continuing is 4.25. Since 4 < 4.25, you expect to do better by re-rolling. Accept only 5 or 6 on the first roll. On the second roll, accept 4+ (since EV of last roll = 3.5).',
       },
     ],
   },
   {
-    id: '06-regression-questions',
+    id: 'regression-questions',
     moduleId: 'interview-prep',
     title: 'Regression Questions',
     order: 6,
@@ -192,32 +173,32 @@ const lessons: Lesson[] = [
       {
         type: 'text',
         content:
-          'Linear regression is the workhorse of quantitative analysis and a constant topic in quant interviews. The model y = β₀ + β₁x + ε estimates the linear relationship between a dependent variable (e.g., stock returns) and one or more independent variables (e.g., market returns, factor exposures). The OLS estimator minimizes the sum of squared residuals.\n\nKey concepts interviewers test: R² (fraction of variance explained, between 0 and 1), the interpretation of coefficients (β₁ is the expected change in y for a one-unit change in x), assumptions (linearity, independence, homoscedasticity, normality of errors), and what happens when assumptions are violated (heteroscedasticity biases standard errors, multicollinearity inflates coefficient variance).\n\nIn finance, regression is used everywhere: CAPM regression (stock return = α + β × market return) estimates a stock\'s systematic risk exposure; cross-sectional regression of returns on factor exposures (Fama-MacBeth) estimates factor risk premia; time-series regression detects trend and mean reversion.',
+          'Regression questions test your understanding of the most widely used statistical tool in quantitative finance. Interviewers expect you to know: the assumptions of OLS (linearity, independence, homoscedasticity, normality), what happens when assumptions are violated, and how to interpret coefficients and diagnostics.\n\nCommon interview topics include: the difference between R² and adjusted R², why adding more variables always increases R² (but may decrease adjusted R²), multicollinearity (correlated predictors inflating standard errors), and heteroscedasticity (non-constant error variance common in financial data).\n\nBe ready to explain beta regression (CAPM), Fama-French factor models, and why ordinary least squares can be problematic with time series data (autocorrelation in residuals violates independence, leading to inflated t-statistics).',
       },
       {
         type: 'code',
         language: 'python',
-        code: 'import numpy as np\n\nnp.random.seed(42)\n\n# CAPM regression: stock return vs market return\nn = 252\nmarket_returns = np.random.normal(0.0004, 0.01, n)\nbeta_true = 1.3\nalpha_true = 0.0002\nnoise = np.random.normal(0, 0.008, n)\nstock_returns = alpha_true + beta_true * market_returns + noise\n\n# OLS: beta = Cov(x,y)/Var(x), alpha = mean(y) - beta*mean(x)\nbeta_hat = np.cov(market_returns, stock_returns)[0,1] / np.var(market_returns)\nalpha_hat = np.mean(stock_returns) - beta_hat * np.mean(market_returns)\n\nresiduals = stock_returns - (alpha_hat + beta_hat * market_returns)\nss_res = np.sum(residuals**2)\nss_tot = np.sum((stock_returns - np.mean(stock_returns))**2)\nr_squared = 1 - ss_res / ss_tot\n\nprint(f"True  alpha: {alpha_true:.4f},  beta: {beta_true:.2f}")\nprint(f"Est   alpha: {alpha_hat:.4f},  beta: {beta_hat:.2f}")\nprint(f"R-squared:   {r_squared:.4f}")\nprint(f"Annual alpha: {alpha_hat * 252:.2%}")',
+        code: 'import numpy as np\n\nnp.random.seed(42)\nn = 100\n\n# Generate data with known relationship\nx1 = np.random.normal(0, 1, n)  # informative feature\nx2 = np.random.normal(0, 1, n)  # noise feature\ny = 2.0 * x1 + 0.0 * x2 + np.random.normal(0, 1, n)\n\n# Manual OLS regression with 2 features\nX = np.column_stack([np.ones(n), x1, x2])\nbetas = np.linalg.lstsq(X, y, rcond=None)[0]\nresiduals = y - X @ betas\nrss = np.sum(residuals**2)\ntss = np.sum((y - np.mean(y))**2)\nr_squared = 1 - rss / tss\nadj_r_squared = 1 - (1 - r_squared) * (n - 1) / (n - 3)\n\n# Standard errors\nmse = rss / (n - 3)\nvar_beta = mse * np.linalg.inv(X.T @ X)\nse = np.sqrt(np.diag(var_beta))\nt_stats = betas / se\n\nprint("OLS Regression Results:")\nprint(f"{\"\":>12} {\"Coef\":>8} {\"Std Err\":>9} {\"t-stat\":>8}")\nfor name, b, s, t in zip(["Intercept", "x1 (signal)", "x2 (noise)"], betas, se, t_stats):\n    print(f"{name:>12} {b:>8.4f} {s:>9.4f} {t:>8.2f}")\nprint(f"\\nR²: {r_squared:.4f}, Adj R²: {adj_r_squared:.4f}")',
         output:
-          'True  alpha: 0.0002,  beta: 1.30\nEst   alpha: 0.0002,  beta: 1.28\nR-squared:   0.6083\nAnnual alpha: 5.90%',
+          'OLS Regression Results:\n             Coef   Std Err   t-stat\n   Intercept  -0.0751    0.0991    -0.76\n x1 (signal)   1.9345    0.1002    19.31\n  x2 (noise)  -0.0178    0.0978    -0.18\n\nR²: 0.7940, Adj R²: 0.7898',
       },
       {
         type: 'quiz',
-        question: 'A CAPM regression gives β = 1.5 and R² = 0.60. What does this tell you?',
+        question: 'In the regression above, how can you tell x2 is not a useful predictor?',
         options: [
-          'The stock moves 1.5x the market and 60% of its variance is explained by the market',
-          'The stock\'s return is 1.5% and its alpha is 60%',
-          'The stock has 1.5 units of risk and 60% probability of profit',
-          'The stock outperforms the market 60% of the time by 1.5x',
+          'Its coefficient is negative',
+          'Its t-statistic is close to zero (not statistically significant)',
+          'Its standard error is too small',
+          'R² would be higher without it',
         ],
-        correct: 0,
+        correct: 1,
         explanation:
-          'Beta of 1.5 means the stock is 50% more volatile than the market — when the market moves 1%, the stock moves ~1.5%. R² = 0.60 means 60% of the stock\'s return variance is explained by market movements; the remaining 40% is idiosyncratic.',
+          'The t-statistic of -0.18 is far below the significance threshold of ±2.0, meaning the coefficient is not statistically distinguishable from zero. The variable x2 has no predictive power. The coefficient\'s sign (positive or negative) doesn\'t indicate usefulness — significance does.',
       },
     ],
   },
   {
-    id: '07-brain-teasers',
+    id: 'brain-teasers',
     moduleId: 'interview-prep',
     title: 'Brain Teasers',
     order: 7,
@@ -227,32 +208,27 @@ const lessons: Lesson[] = [
       {
         type: 'text',
         content:
-          'Brain teasers in quant interviews test logical reasoning and the ability to structure problems under time pressure. The interviewer is evaluating your thought process, not just the final answer. Always think out loud, consider edge cases, and verify your solution with a simple example.\n\nClassic quant brain teasers include: "You have a 3-gallon and a 5-gallon jug. How do you measure exactly 4 gallons?" (Fill 5, pour into 3, empty 3, pour remaining 2 into 3, fill 5 again, pour 1 into 3 — you now have 4 in the 5-gallon jug.) The key is working backwards from the target.\n\nAnother common type is the "weighing problem": "You have 12 coins, one of which is counterfeit and slightly lighter or heavier. Using a balance scale and at most 3 weighings, find the counterfeit coin and determine if it\'s heavier or lighter." These problems test your ability to maximize information per experiment — each weighing has 3 outcomes (left heavy, right heavy, balanced), so 3 weighings give 3³ = 27 possible outcomes, enough to identify one of 24 possibilities (12 coins × 2 states).',
+          'Brain teasers test logical thinking, creativity, and the ability to structure ambiguous problems. While less common than they once were, many quant firms still use them. The key is not to panic — interviewers want to see your thought process, not just the answer.\n\nApproach: (1) Clarify the problem — ask questions about constraints and edge cases. (2) Start with simple cases — try n=1, n=2 to build intuition. (3) Look for patterns or symmetry. (4) State your reasoning aloud as you work through it. (5) Sanity-check your answer.\n\nCommon types: logic puzzles (knights and knaves, weighing problems), counting problems (how many piano tuners in Chicago?), estimation problems (Fermi estimates), and adversarial games (optimal strategies in competitive settings).',
       },
       {
         type: 'code',
         language: 'python',
-        code: '# Classic: 100 doors problem\n# 100 closed doors. Person 1 toggles every door. Person 2 toggles every 2nd.\n# Person 3 every 3rd... Person 100 every 100th. Which doors are open?\n\nn = 100\ndoors = [False] * (n + 1)  # False = closed\n\nfor person in range(1, n + 1):\n    for door in range(person, n + 1, person):\n        doors[door] = not doors[door]\n\nopen_doors = [i for i in range(1, n + 1) if doors[i]]\nprint(f"Open doors: {open_doors}")\nprint(f"Count: {len(open_doors)}")\nprint(f"\\nPattern: perfect squares! A door is toggled once")\nprint(f"for each of its divisors. Perfect squares have an")\nprint(f"odd number of divisors, so they end up open.")',
+        code: '# Classic: 100 lockers problem\n# 100 students, 100 lockers. Student k toggles every k-th locker.\n# Which lockers are open at the end?\n\ndef simulate_lockers(n):\n    lockers = [False] * (n + 1)  # False = closed\n    for student in range(1, n + 1):\n        for locker in range(student, n + 1, student):\n            lockers[locker] = not lockers[locker]\n    return [i for i in range(1, n + 1) if lockers[i]]\n\nopen_lockers = simulate_lockers(100)\nprint(f"Open lockers: {open_lockers}")\nprint(f"Count: {len(open_lockers)}")\nprint(f"\\nPattern: these are all perfect squares!")\nprint(f"Why? A locker is toggled once per divisor.")\nprint(f"Only perfect squares have an odd number of divisors")\nprint(f"(because one divisor is repeated: sqrt(n) × sqrt(n)).")\n\n# Verify: perfect squares up to 100\nsquares = [i**2 for i in range(1, 11)]\nprint(f"Perfect squares ≤ 100: {squares}")\nprint(f"Match: {open_lockers == squares}")',
         output:
-          'Open doors: [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]\nCount: 10\n\nPattern: perfect squares! A door is toggled once\nfor each of its divisors. Perfect squares have an\nodd number of divisors, so they end up open.',
+          'Open lockers: [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]\nCount: 10\n\nPattern: these are all perfect squares!\nWhy? A locker is toggled once per divisor.\nOnly perfect squares have an odd number of divisors\n(because one divisor is repeated: sqrt(n) × sqrt(n)).\nPerfect squares ≤ 100: [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]\nMatch: True',
       },
       {
         type: 'quiz',
-        question: 'In the 100 doors problem, why are exactly the perfect square doors left open?',
-        options: [
-          'Because they are the first 10 doors',
-          'Because perfect squares have an odd number of divisors, so they are toggled an odd number of times',
-          'Because only person 1 opens them',
-          'Because they are multiples of 10',
-        ],
+        question: 'You have 12 identical-looking balls. One is heavier or lighter than the rest. Using a balance scale, what is the minimum number of weighings to identify the odd ball and whether it\'s heavier or lighter?',
+        options: ['2', '3', '4', '6'],
         correct: 1,
         explanation:
-          'Each door n is toggled once for each of its divisors. Most numbers have divisors in pairs (e.g., 12: 1×12, 2×6, 3×4 = 6 divisors, even). Perfect squares have one unpaired divisor (e.g., 9: 1×9, 3×3 = 3 divisors, odd) because the square root pairs with itself. Odd toggles = open.',
+          'Each weighing has 3 outcomes (left heavy, balanced, right heavy). With 3 weighings you can distinguish 3³ = 27 possibilities. Since there are 24 possibilities (12 balls × heavier or lighter), 3 weighings suffice. A careful strategy divides balls into groups of 4 on the first weighing.',
       },
     ],
   },
   {
-    id: '08-systems-design',
+    id: 'systems-design',
     moduleId: 'interview-prep',
     title: 'Systems Design',
     order: 8,
@@ -262,37 +238,30 @@ const lessons: Lesson[] = [
       {
         type: 'text',
         content:
-          'Systems design interviews at quant firms test your ability to architect real-time trading infrastructure. Unlike general software engineering, trading systems have extreme requirements: microsecond latency, guaranteed message ordering, deterministic execution, and fault tolerance with zero data loss.\n\nA typical question is "Design a real-time market data system." Key components include: a feed handler (receives raw exchange data via UDP multicast, normalizes the format), a message bus (distributes normalized data to consumers with pub/sub), an order book builder (maintains the limit order book state from incremental updates), and a time-series store (persists tick data for historical analysis).\n\nCritical design decisions include: language choice (C++ or Rust for latency-critical paths, Python for research), data structures (lock-free queues for inter-thread communication, memory-mapped files for persistence), and failure handling (what happens when a feed disconnects — rebuild from snapshot + replay). Always discuss trade-offs: latency vs. throughput, consistency vs. availability, complexity vs. maintainability.',
+          'Systems design questions test your ability to architect trading infrastructure at scale. Common questions include: "Design a real-time market data system," "Design an order management system," or "Design a backtesting platform."\n\nKey components of a trading system: market data handler (ingests and normalizes real-time feeds), signal generator (computes alpha signals from data), order management system (OMS — tracks order lifecycle), execution management system (EMS — routes orders to venues), risk management (pre-trade and real-time checks), and post-trade analytics.\n\nDesign considerations: latency requirements (microseconds for HFT, seconds for daily strategies), throughput (millions of messages per second for market data), reliability (no single point of failure — redundant systems), and scalability (handle more instruments and strategies without redesigning).',
       },
       {
         type: 'text',
         content:
-          'When answering, structure your response as: (1) clarify requirements (latency target? throughput? number of instruments?), (2) high-level architecture (draw the component diagram), (3) deep dive into 2-3 critical components, (4) discuss failure modes and recovery. Quantify everything: "This system processes 10 million messages per second with P99 latency under 50 microseconds."',
-      },
-      {
-        type: 'code',
-        language: 'python',
-        code: '# Simple order book data structure design\nfrom collections import defaultdict\nimport heapq\n\nclass OrderBook:\n    def __init__(self):\n        self.bids = []  # max-heap (negate prices)\n        self.asks = []  # min-heap\n        self.bid_qty = defaultdict(int)\n        self.ask_qty = defaultdict(int)\n\n    def add_bid(self, price, qty):\n        self.bid_qty[price] += qty\n        heapq.heappush(self.bids, -price)\n\n    def add_ask(self, price, qty):\n        self.ask_qty[price] += qty\n        heapq.heappush(self.asks, price)\n\n    def best_bid(self):\n        while self.bids and self.bid_qty[-self.bids[0]] == 0:\n            heapq.heappop(self.bids)\n        return -self.bids[0] if self.bids else None\n\n    def best_ask(self):\n        while self.asks and self.ask_qty[self.asks[0]] == 0:\n            heapq.heappop(self.asks)\n        return self.asks[0] if self.asks else None\n\nob = OrderBook()\nfor p, q in [(99.95, 100), (99.90, 200), (100.05, 150), (100.10, 300)]:\n    if p < 100:\n        ob.add_bid(p, q)\n    else:\n        ob.add_ask(p, q)\n\nprint(f"Best bid: ${ob.best_bid()} | Best ask: ${ob.best_ask()}")\nprint(f"Spread: ${ob.best_ask() - ob.best_bid():.2f}")',
-        output:
-          'Best bid: $99.95 | Best ask: $100.05\nSpread: $0.10',
+          'A framework for answering systems design questions:\n\n1. Clarify requirements: What latency? What scale? What failure modes?\n2. High-level architecture: Draw the major components and data flows\n3. Deep dive: Pick 2-3 critical components and explain design decisions\n4. Trade-offs: Discuss alternatives you considered and why you chose your approach\n5. Failure handling: How does the system degrade gracefully?\n\nBe prepared to discuss: event-driven vs. polling architectures, message queues (Kafka) vs. direct connections, databases (time-series DBs like InfluxDB vs. relational), caching strategies (Redis for hot data), and monitoring/alerting.',
       },
       {
         type: 'quiz',
-        question: 'Why do trading systems use lock-free data structures for inter-thread communication?',
+        question: 'Why would a trading system use an event-driven architecture rather than polling?',
         options: [
-          'They use less memory',
-          'They avoid the latency spikes caused by mutex contention and context switches',
-          'They are simpler to implement',
-          'They prevent data races automatically',
+          'Polling is always faster',
+          'Event-driven reacts immediately to new data without wasting resources checking for updates',
+          'Event-driven systems are simpler to build',
+          'Polling cannot handle real-time data',
         ],
         correct: 1,
         explanation:
-          'Mutexes can cause unpredictable latency spikes when threads contend for locks, leading to context switches and priority inversion. Lock-free queues use atomic operations (CAS) that never block, providing bounded, deterministic latency — critical for trading where microsecond jitter matters.',
+          'Event-driven architectures process data as soon as it arrives (push model), while polling repeatedly checks for updates (pull model). For trading, event-driven is preferred because it minimizes latency (react instantly to new market data) and avoids wasting CPU cycles on empty polls.',
       },
     ],
   },
   {
-    id: '09-mock-interview-tips',
+    id: 'mock-interview-tips',
     moduleId: 'interview-prep',
     title: 'Mock Interview Tips',
     order: 9,
@@ -302,30 +271,30 @@ const lessons: Lesson[] = [
       {
         type: 'text',
         content:
-          'The difference between a good quant candidate and a great one is often not knowledge but communication and problem-solving process. Interviewers want to see structured thinking, not just correct answers. Always start by restating the problem in your own words, ask clarifying questions, and outline your approach before diving into calculations.\n\nFor math and probability questions, use the STAR framework adapted for quant: State the problem precisely, Think about the approach (enumerate methods, pick the best), Apply the method step by step, and Review your answer (sanity check with special cases or simulations). If you get stuck, say so and explain what you have tried — interviewers often provide hints when you show good process.\n\nTime management is critical. In a 45-minute interview, you might face 3-5 questions of varying difficulty. Spend proportional effort: nail the easy questions quickly (2-3 minutes each), invest more time in medium and hard questions. If a question is taking too long, state your approach, give your best answer, and ask if you should move on.',
+          'Mock interviews are the single most effective way to prepare. The gap between solving problems alone and solving them while someone watches is enormous. Practice with a partner at least 10 times before your real interviews.\n\nDuring the interview: think aloud (the interviewer wants to see your reasoning process), start with a brute-force solution (show you can solve it, then optimize), ask clarifying questions (shows maturity and thoroughness), and manage your time (don\'t spend 20 minutes on approach without writing any code).\n\nCommon mistakes: going silent for long periods (keep talking through your thought process), jumping to code before understanding the problem, not testing your solution with examples, getting flustered by hints (hints are not criticism — they\'re steering you toward the solution), and not knowing your own resume (be ready to discuss any project or skill you\'ve listed).',
       },
       {
         type: 'text',
         content:
-          'Common mistakes to avoid: (1) jumping to a solution without understanding the question, (2) staying silent while thinking — always narrate your thought process, (3) ignoring edge cases (what if n=0? what if all values are equal?), (4) not verifying your answer with a simple example, (5) giving up instead of trying a simpler version of the problem. Remember that the interview is a conversation, not an exam.',
+          'Interview day checklist:\n\n1. Review your resume — be ready to discuss every bullet point in depth\n2. Practice 2-3 warm-up problems before the interview\n3. Have specific examples ready: a challenging project, a technical failure and how you resolved it, a time you disagreed with a colleague\n4. Prepare thoughtful questions for the interviewer about the team\'s research process, tech stack, and culture\n5. For market-making interviews: review basic options Greeks, understand bid-ask dynamics\n6. For systematic trading: review factor models, backtesting methodology, time series analysis\n7. For quant dev: review data structures, system design patterns, concurrency',
       },
       {
         type: 'quiz',
-        question: 'You are stuck on an interview problem. What is the best approach?',
+        question: 'You\'re stuck on an interview problem. What should you do?',
         options: [
-          'Stay silent and keep thinking until you find the answer',
-          'Immediately ask for the solution',
-          'Explain what you have tried, what is blocking you, and try a simpler version of the problem',
-          'Move on to the next question without saying anything',
+          'Sit silently until you figure it out',
+          'Explain what you\'ve tried, what\'s blocking you, and ask if there\'s a hint you can use',
+          'Immediately move to the next problem',
+          'Guess a random answer',
         ],
-        correct: 2,
+        correct: 1,
         explanation:
-          'Explaining your thought process shows the interviewer how you reason under pressure. Trying a simpler version (smaller n, fewer constraints) often reveals the pattern needed for the full solution. Interviewers frequently give hints when you demonstrate good process — silence gives them nothing to work with.',
+          'Communicating your thought process — including when you\'re stuck — shows maturity and problem-solving ability. Interviewers often have hints prepared and want to see how you incorporate new information. Going silent is the worst option because the interviewer can\'t evaluate your thinking.',
       },
     ],
   },
   {
-    id: '10-study-plan',
+    id: 'study-plan',
     moduleId: 'interview-prep',
     title: 'Study Plan',
     order: 10,
@@ -335,27 +304,25 @@ const lessons: Lesson[] = [
       {
         type: 'text',
         content:
-          'A structured study plan is essential for quant interview preparation. Most candidates need 4-8 weeks of focused preparation. The plan should cover four pillars: probability and statistics, programming and data structures, mental math, and domain knowledge (market microstructure, options pricing, portfolio theory).\n\nWeeks 1-2: Build foundations. Review probability (conditional probability, Bayes\' theorem, common distributions), linear algebra (matrix operations, eigenvalues), and calculus (derivatives, optimization). Solve 5-10 probability puzzles daily. Practice mental math for 15 minutes each morning.\n\nWeeks 3-4: Coding and problem-solving. Implement classic algorithms (sorting, searching, dynamic programming). Solve 2-3 LeetCode medium problems daily, focusing on arrays, hash maps, and trees. Write Python implementations of financial computations: option pricing, portfolio optimization, Monte Carlo simulation.\n\nWeeks 5-6: Domain depth and mock interviews. Study market microstructure, factor investing, and risk management. Do timed mock interviews with a partner or online platform. Review and plug knowledge gaps identified during practice.',
+          'A structured study plan maximizes your preparation efficiency. The typical quant interview process includes: a phone screen (probability, mental math), technical rounds (coding, statistics, finance knowledge), and a superday (multiple back-to-back interviews testing all areas).\n\nWeeks 1-2: Foundation. Review probability (Bayes, conditional probability, distributions), statistics (regression, hypothesis testing), and linear algebra (matrices, eigenvalues). Solve 3-5 probability puzzles daily.\n\nWeeks 3-4: Coding. Practice 2 medium-difficulty algorithm problems daily (arrays, hash maps, dynamic programming). Implement a simple backtest from scratch. Review Python/NumPy/Pandas fluency.',
       },
       {
-        type: 'code',
-        language: 'python',
-        code: '# Weekly study tracker\nweeks = {\n    "Week 1-2": {\n        "topics": ["Probability", "Linear Algebra", "Calculus"],\n        "daily": "5-10 probability puzzles + 15min mental math",\n        "hours": 15\n    },\n    "Week 3-4": {\n        "topics": ["Data Structures", "Algorithms", "Python coding"],\n        "daily": "2-3 LeetCode mediums + finance implementations",\n        "hours": 20\n    },\n    "Week 5-6": {\n        "topics": ["Microstructure", "Factor Investing", "Risk"],\n        "daily": "1 mock interview + domain reading",\n        "hours": 20\n    },\n}\n\ntotal = 0\nfor period, plan in weeks.items():\n    total += plan["hours"]\n    print(f"\\n{period} ({plan[\'hours\']}h/week):")\n    print(f"  Topics: {\', \'.join(plan[\'topics\'])}")\n    print(f"  Daily:  {plan[\'daily\']}")\n\nprint(f"\\nTotal prep time: ~{total * 2}h over 6 weeks")\nprint(f"That\'s ~{total * 2 / 42:.1f} hours per day")',
-        output:
-          '\nWeek 1-2 (15h/week):\n  Topics: Probability, Linear Algebra, Calculus\n  Daily:  5-10 probability puzzles + 15min mental math\n\nWeek 3-4 (20h/week):\n  Topics: Data Structures, Algorithms, Python coding\n  Daily:  2-3 LeetCode mediums + finance implementations\n\nWeek 5-6 (20h/week):\n  Topics: Microstructure, Factor Investing, Risk\n  Daily:  1 mock interview + domain reading\n\nTotal prep time: ~110h over 6 weeks\nThat\'s ~2.6 hours per day',
+        type: 'text',
+        content:
+          'Weeks 5-6: Finance-specific. Study options pricing (Black-Scholes, Greeks), portfolio theory (CAPM, Markowitz), and market microstructure. Practice mental math daily (15 minutes of multiplication, estimation, percentage calculations).\n\nWeeks 7-8: Integration and mock interviews. Do 3+ full mock interviews. Time yourself solving problems (most coding questions should take 20-30 minutes). Practice explaining your answers clearly and concisely.\n\nEssential resources:\n- "Heard on the Street" by Timothy Crack (interview questions)\n- "A Practical Guide to Quantitative Finance Interviews" (Green Book)\n- LeetCode (coding practice, focus on medium difficulty)\n- "Fifty Challenging Problems in Probability" by Mosteller\n- This app! Complete all modules for comprehensive coverage.',
       },
       {
         type: 'quiz',
-        question: 'What is the most effective way to prepare for probability questions in quant interviews?',
+        question: 'What is the recommended daily practice volume for coding problems during weeks 3-4?',
         options: [
-          'Memorize formulas from a textbook',
-          'Solve diverse puzzles daily and simulate answers computationally to verify',
-          'Watch YouTube tutorials the night before',
-          'Only focus on the most common 5 problems',
+          '10 problems per day',
+          '2 medium-difficulty problems per day',
+          '1 easy problem per week',
+          '5 hard problems per day',
         ],
         correct: 1,
         explanation:
-          'Consistent daily practice with diverse problems builds the pattern recognition and speed needed for interviews. Verifying answers with Monte Carlo simulations deepens understanding and catches errors. Memorizing formulas without practice leads to freezing under pressure.',
+          '2 medium-difficulty problems per day is optimal. This is enough to build problem-solving patterns without burnout. Quality matters more than quantity — take time to understand each solution deeply and learn the underlying patterns (two pointers, sliding window, dynamic programming) rather than memorizing specific solutions.',
       },
     ],
   },

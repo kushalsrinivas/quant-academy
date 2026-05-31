@@ -1,6 +1,9 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useEffect, useState } from "react";
 import {
+  Alert,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,

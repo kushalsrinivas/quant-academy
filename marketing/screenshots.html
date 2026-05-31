@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quant Academy - App Store Screenshots Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            min-height: 100vh;
+        }
+        .controls {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(10,10,10,0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .controls h1 {
+            font-size: 18px;
+            font-weight: 700;
+            flex: 1;
+        }
+        .btn {
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: #3B82F6;
+            color: #fff;
+        }
+        .btn-primary:hover { background: #2563EB; }
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.15); }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .progress-bar {
+            display: none;
+            width: 200px;
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-bar.active { display: block; }
+        .progress-fill {
+            height: 100%;
+            background: #3B82F6;
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+        .status { font-size: 12px; color: rgba(255,255,255,0.6); }
+
+        .content {
+            padding-top: 80px;
+            padding-bottom: 60px;
+        }
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            padding: 40px 24px 20px;
+            color: #fff;
+        }
+        .screenshots-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            padding: 0 24px;
+            justify-content: center;
+        }
+        .screenshot-wrapper {
+            position: relative;
+        }
+        .screenshot-label {
+            text-align: center;
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+            margin-top: 8px;
+        }
+
+        /* iPhone Frame: 1284x2778 */
+        .iphone-frame {
+            width: 321px;
+            height: 694px;
+            border-radius: 40px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        /* iPad Frame: 2048x2732 */
+        .ipad-frame {
+            width: 384px;
+            height: 512px;
+            border-radius: 24px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        /* Actual render targets (hidden, used for export) */
+        .render-target {
+            position: absolute;
+            left: -99999px;
+            top: 0;
+        }
+        .iphone-render {
+            width: 1284px;
+            height: 2778px;
+        }
+        .ipad-render {
+            width: 2048px;
+            height: 2732px;
+        }
+
+        /* Screenshot card base styles */
+        .ss-card {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+        .ss-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            opacity: 0.1;
+        }
+        .ss-headline {
+            font-size: 42px;
+            font-weight: 800;
+            text-align: center;
+            line-height: 1.15;
+            margin-bottom: 16px;
+            z-index: 2;
+        }
+        .ss-subheadline {
+            font-size: 20px;
+            text-align: center;
+            opacity: 0.8;
+            line-height: 1.4;
+            z-index: 2;
+        }
+        .ss-phone-mockup {
+            width: 70%;
+            max-width: 500px;
+            margin-top: 40px;
+            border-radius: 30px;
+            background: #1a1a1a;
+            padding: 12px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+            z-index: 2;
+        }
+        .ss-phone-screen {
+            border-radius: 20px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        /* iPad specific */
+        .ipad-render .ss-card { padding: 100px 80px; }
+        .ipad-render .ss-headline { font-size: 72px; }
+        .ipad-render .ss-subheadline { font-size: 36px; }
+        .ipad-render .ss-phone-mockup { width: 55%; max-width: 900px; border-radius: 40px; padding: 20px; }
+        .ipad-render .ss-phone-screen { border-radius: 28px; }
+
+        /* Individual screenshot designs */
+        .ss-1 { background: linear-gradient(160deg, #0f172a 0%, #1e3a5f 50%, #3B82F6 100%); }
+        .ss-2 { background: linear-gradient(160deg, #1a0533 0%, #4c1d95 50%, #8B5CF6 100%); }
+        .ss-3 { background: linear-gradient(160deg, #042f2e 0%, #065f46 50%, #10B981 100%); }
+        .ss-4 { background: linear-gradient(160deg, #1c1917 0%, #78350f 50%, #F59E0B 100%); }
+        .ss-5 { background: linear-gradient(160deg, #0c0a09 0%, #7f1d1d 50%, #EF4444 100%); }
+        .ss-6 { background: linear-gradient(160deg, #0f172a 0%, #312e81 50%, #6366F1 100%); }
+        .ss-7 { background: linear-gradient(160deg, #022c22 0%, #064e3b 50%, #14B8A6 100%); }
+        .ss-8 { background: linear-gradient(160deg, #1a0533 0%, #831843 50%, #EC4899 100%); }
+        .ss-9 { background: linear-gradient(160deg, #0a0a0a 0%, #1f2937 50%, #3B82F6 100%); }
+        .ss-10 { background: linear-gradient(160deg, #0f172a 0%, #0d9488 50%, #06B6D4 100%); }
+
+        /* Decorative elements */
+        .ss-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            z-index: 2;
+        }
+        .ss-feature-list {
+            list-style: none;
+            z-index: 2;
+            margin-top: 24px;
+            text-align: left;
+            width: 100%;
+        }
+        .ss-feature-list li {
+            font-size: 18px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .ss-feature-list li:last-child { border-bottom: none; }
+        .ss-icon { font-size: 24px; }
+
+        .ss-stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            width: 100%;
+            margin-top: 30px;
+            z-index: 2;
+        }
+        .ss-stat-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+        .ss-stat-number {
+            font-size: 32px;
+            font-weight: 800;
+        }
+        .ss-stat-label {
+            font-size: 13px;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+
+        .ss-module-cards {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 30px;
+            z-index: 2;
+        }
+        .ss-module-card {
+            background: rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            backdrop-filter: blur(10px);
+        }
+        .ss-module-emoji { font-size: 28px; }
+        .ss-module-title { font-weight: 600; font-size: 16px; }
+        .ss-module-desc { font-size: 12px; opacity: 0.7; }
+
+        .floating-element {
+            position: absolute;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            z-index: 1;
+        }
+
+        /* Render target specific sizes */
+        .iphone-render .ss-headline { font-size: 80px; }
+        .iphone-render .ss-subheadline { font-size: 36px; }
+        .iphone-render .ss-badge { font-size: 26px; padding: 14px 36px; }
+        .iphone-render .ss-feature-list li { font-size: 34px; padding: 18px 0; gap: 20px; }
+        .iphone-render .ss-icon { font-size: 44px; }
+        .iphone-render .ss-stat-number { font-size: 58px; }
+        .iphone-render .ss-stat-label { font-size: 24px; }
+        .iphone-render .ss-stats-grid { gap: 28px; margin-top: 50px; }
+        .iphone-render .ss-stat-card { padding: 36px; border-radius: 28px; }
+        .iphone-render .ss-module-card { padding: 28px 34px; border-radius: 24px; gap: 24px; }
+        .iphone-render .ss-module-emoji { font-size: 50px; }
+        .iphone-render .ss-module-title { font-size: 30px; }
+        .iphone-render .ss-module-desc { font-size: 22px; }
+        .iphone-render .ss-card { padding: 120px 80px; }
+
+        .ipad-render .ss-feature-list li { font-size: 32px; padding: 16px 0; gap: 18px; }
+        .ipad-render .ss-icon { font-size: 40px; }
+        .ipad-render .ss-stat-number { font-size: 52px; }
+        .ipad-render .ss-stat-label { font-size: 22px; }
+        .ipad-render .ss-stats-grid { gap: 24px; margin-top: 44px; }
+        .ipad-render .ss-stat-card { padding: 32px; border-radius: 24px; }
+        .ipad-render .ss-module-card { padding: 24px 30px; border-radius: 20px; gap: 20px; }
+        .ipad-render .ss-module-emoji { font-size: 44px; }
+        .ipad-render .ss-module-title { font-size: 26px; }
+        .ipad-render .ss-module-desc { font-size: 18px; }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <h1>Quant Academy — App Store Screenshots</h1>
+        <button class="btn btn-primary" onclick="downloadAllAsZip()">Download All as ZIP</button>
+        <button class="btn btn-secondary" onclick="downloadiPhone()">iPhone Only</button>
+        <button class="btn btn-secondary" onclick="downloadiPad()">iPad Only</button>
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+        <span class="status" id="statusText"></span>
+    </div>
+
+    <div class="content">
+        <h2 class="section-title">iPhone Screenshots (1284 × 2778px)</h2>
+        <div class="screenshots-grid" id="iphonePreview"></div>
+
+        <h2 class="section-title">iPad Screenshots (2048 × 2732px)</h2>
+        <div class="screenshots-grid" id="ipadPreview"></div>
+    </div>
+
+    <!-- Hidden render targets for actual export -->
+    <div id="renderContainer" class="render-target"></div>
+
+    <script>
+    const screenshotData = [
+        {
+            id: 1,
+            headline: "Master Quant Trading",
+            subheadline: "From zero to Wall Street-ready. Learn the math, code, and strategies behind quantitative finance.",
+            badge: { text: "#1 Quant Learning App", bg: "rgba(59,130,246,0.3)" },
+            type: "hero"
+        },
+        {
+            id: 2,
+            headline: "10 Expert Modules",
+            subheadline: "A structured path from market basics to advanced quantitative research.",
+            type: "modules",
+            modules: [
+                { icon: "📈", title: "Markets 101", desc: "How markets work" },
+                { icon: "🎲", title: "Probability", desc: "Expected value & distributions" },
+                { icon: "📊", title: "Statistics", desc: "Correlation & regression" },
+                { icon: "🐍", title: "Python for Quants", desc: "NumPy & Pandas" },
+                { icon: "⚡", title: "Backtesting", desc: "Strategy testing" },
+            ]
+        },
+        {
+            id: 3,
+            headline: "Learn by Doing",
+            subheadline: "Interactive simulations that make complex concepts click.",
+            type: "features",
+            features: [
+                { icon: "🏗️", text: "Strategy Builder" },
+                { icon: "📖", text: "Order Book Simulator" },
+                { icon: "🎯", text: "Coin Toss Lab" },
+                { icon: "📊", text: "Stock Comparison" },
+                { icon: "🏦", text: "Exchange Simulator" },
+            ]
+        },
+        {
+            id: 4,
+            headline: "Build Real Strategies",
+            subheadline: "Create buy/sell conditions. Backtest against real Nifty 50 data. See actual results.",
+            type: "hero",
+            badge: { text: "Strategy Builder", bg: "rgba(245,158,11,0.3)" }
+        },
+        {
+            id: 5,
+            headline: "Ace the Interview",
+            subheadline: "Practice what HRT, Jane Street, and Citadel actually ask.",
+            type: "features",
+            features: [
+                { icon: "💻", text: "Coding Challenges" },
+                { icon: "🎲", text: "Probability Puzzles" },
+                { icon: "🧮", text: "Mental Math Drills" },
+                { icon: "💡", text: "Brain Teasers" },
+                { icon: "⚙️", text: "Systems Design" },
+            ]
+        },
+        {
+            id: 6,
+            headline: "Track Your Growth",
+            subheadline: "XP system, levels, achievements. Stay motivated as you level up your quant skills.",
+            type: "stats",
+            stats: [
+                { number: "100+", label: "Lessons" },
+                { number: "50+", label: "Problems" },
+                { number: "15", label: "Achievements" },
+                { number: "10", label: "Levels" },
+            ]
+        },
+        {
+            id: 7,
+            headline: "Math Made Intuitive",
+            subheadline: "Linear algebra, calculus, stochastic processes — explained with visual examples.",
+            type: "modules",
+            modules: [
+                { icon: "🔢", title: "Linear Algebra", desc: "Vectors & matrices" },
+                { icon: "📐", title: "Calculus", desc: "Derivatives & integrals" },
+                { icon: "📈", title: "Optimization", desc: "Min/max problems" },
+                { icon: "🎲", title: "Stochastic", desc: "Random processes" },
+            ]
+        },
+        {
+            id: 8,
+            headline: "Market Microstructure",
+            subheadline: "Understand order books, market making, slippage, and high-frequency trading.",
+            type: "hero",
+            badge: { text: "Advanced", bg: "rgba(236,72,153,0.3)" }
+        },
+        {
+            id: 9,
+            headline: "Gamified Learning",
+            subheadline: "Earn XP, unlock achievements, climb levels. Learning quant has never been this engaging.",
+            type: "stats",
+            stats: [
+                { number: "🏆", label: "Achievements" },
+                { number: "⚡", label: "XP System" },
+                { number: "📊", label: "Progress" },
+                { number: "🎯", label: "Streaks" },
+            ]
+        },
+        {
+            id: 10,
+            headline: "Start for Free",
+            subheadline: "No subscriptions. No paywalls. Pure knowledge, completely free. Start your quant journey today.",
+            type: "hero",
+            badge: { text: "100% Free", bg: "rgba(16,185,129,0.3)" }
+        }
+    ];
+
+    function generateScreenshotHTML(data, isIpad = false) {
+        let inner = '';
+        const classPrefix = isIpad ? 'ipad' : 'iphone';
+
+        if (data.badge) {
+            inner += `<div class="ss-badge" style="background: ${data.badge.bg}; color: #fff;">${data.badge.text}</div>`;
+        }
+        inner += `<div class="ss-headline" style="color: #fff;">${data.headline}</div>`;
+        inner += `<div class="ss-subheadline" style="color: rgba(255,255,255,0.85);">${data.subheadline}</div>`;
+
+        if (data.type === 'features' && data.features) {
+            inner += '<ul class="ss-feature-list">';
+            data.features.forEach(f => {
+                inner += `<li style="color: #fff;"><span class="ss-icon">${f.icon}</span> ${f.text}</li>`;
+            });
+            inner += '</ul>';
+        }
+
+        if (data.type === 'stats' && data.stats) {
+            inner += '<div class="ss-stats-grid">';
+            data.stats.forEach(s => {
+                inner += `<div class="ss-stat-card"><div class="ss-stat-number" style="color: #fff;">${s.number}</div><div class="ss-stat-label" style="color: rgba(255,255,255,0.7);">${s.label}</div></div>`;
+            });
+            inner += '</div>';
+        }
+
+        if (data.type === 'modules' && data.modules) {
+            inner += '<div class="ss-module-cards">';
+            data.modules.forEach(m => {
+                inner += `<div class="ss-module-card"><span class="ss-module-emoji">${m.icon}</span><div><div class="ss-module-title" style="color: #fff;">${m.title}</div><div class="ss-module-desc" style="color: rgba(255,255,255,0.7);">${m.desc}</div></div></div>`;
+            });
+            inner += '</div>';
+        }
+
+        // Floating decorative elements
+        inner += `<div class="floating-element" style="width: ${isIpad ? 300 : 200}px; height: ${isIpad ? 300 : 200}px; top: -60px; right: -60px; border-radius: 50%;"></div>`;
+        inner += `<div class="floating-element" style="width: ${isIpad ? 200 : 150}px; height: ${isIpad ? 200 : 150}px; bottom: -40px; left: -40px; border-radius: 50%;"></div>`;
+
+        return `<div class="ss-card ss-${data.id}">${inner}</div>`;
+    }
+
+    function createPreview(container, isIpad) {
+        const el = document.getElementById(container);
+        screenshotData.forEach(data => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'screenshot-wrapper';
+
+            const frame = document.createElement('div');
+            frame.className = isIpad ? 'ipad-frame' : 'iphone-frame';
+            frame.innerHTML = generateScreenshotHTML(data, isIpad);
+            frame.querySelector('.ss-card').style.transform = isIpad ? 'scale(0.1407)' : 'scale(0.25)';
+            frame.querySelector('.ss-card').style.transformOrigin = 'top left';
+            frame.querySelector('.ss-card').style.width = isIpad ? '2048px' : '1284px';
+            frame.querySelector('.ss-card').style.height = isIpad ? '2732px' : '2778px';
+
+            wrapper.appendChild(frame);
+
+            const label = document.createElement('div');
+            label.className = 'screenshot-label';
+            label.textContent = `Screenshot ${data.id}: ${data.headline}`;
+            wrapper.appendChild(label);
+
+            el.appendChild(wrapper);
+        });
+    }
+
+    function createRenderTarget(data, isIpad) {
+        const container = document.getElementById('renderContainer');
+        const div = document.createElement('div');
+        div.className = isIpad ? 'ipad-render' : 'iphone-render';
+        div.id = `render-${isIpad ? 'ipad' : 'iphone'}-${data.id}`;
+        div.innerHTML = generateScreenshotHTML(data, isIpad);
+        container.appendChild(div);
+        return div;
+    }
+
+    async function captureScreenshot(data, isIpad) {
+        const div = createRenderTarget(data, isIpad);
+        // Move into viewport temporarily for html2canvas
+        div.style.position = 'fixed';
+        div.style.left = '0';
+        div.style.top = '0';
+        div.style.zIndex = '-9999';
+
+        await new Promise(r => setTimeout(r, 100));
+
+        const canvas = await html2canvas(div, {
+            width: isIpad ? 2048 : 1284,
+            height: isIpad ? 2732 : 2778,
+            scale: 1,
+            useCORS: true,
+            backgroundColor: null,
+        });
+
+        div.remove();
+        return canvas.toDataURL('image/png');
+    }
+
+    async function downloadAllAsZip() {
+        await generateZip('all');
+    }
+    async function downloadiPhone() {
+        await generateZip('iphone');
+    }
+    async function downloadiPad() {
+        await generateZip('ipad');
+    }
+
+    async function generateZip(type) {
+        const btn = document.querySelector('.btn-primary');
+        btn.disabled = true;
+        const bar = document.getElementById('progressBar');
+        const fill = document.getElementById('progressFill');
+        const status = document.getElementById('statusText');
+        bar.classList.add('active');
+
+        const zip = new JSZip();
+        const iphoneFolder = zip.folder('iPhone_1284x2778');
+        const ipadFolder = zip.folder('iPad_2048x2732');
+
+        const total = type === 'all' ? 20 : 10;
+        let done = 0;
+
+        if (type === 'all' || type === 'iphone') {
+            for (const data of screenshotData) {
+                status.textContent = `Rendering iPhone ${data.id}/10...`;
+                const dataUrl = await captureScreenshot(data, false);
+                const base64 = dataUrl.split(',')[1];
+                iphoneFolder.file(`iPhone_${String(data.id).padStart(2,'0')}_${data.headline.replace(/\s+/g,'_')}.png`, base64, { base64: true });
+                done++;
+                fill.style.width = `${(done/total)*100}%`;
+            }
+        }
+
+        if (type === 'all' || type === 'ipad') {
+            for (const data of screenshotData) {
+                status.textContent = `Rendering iPad ${data.id}/10...`;
+                const dataUrl = await captureScreenshot(data, true);
+                const base64 = dataUrl.split(',')[1];
+                ipadFolder.file(`iPad_${String(data.id).padStart(2,'0')}_${data.headline.replace(/\s+/g,'_')}.png`, base64, { base64: true });
+                done++;
+                fill.style.width = `${(done/total)*100}%`;
+            }
+        }
+
+        status.textContent = 'Creating ZIP...';
+        const content = await zip.generateAsync({ type: 'blob' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(content);
+        a.download = `QuantAcademy_AppStore_Screenshots_${type}.zip`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+
+        status.textContent = 'Done!';
+        fill.style.width = '100%';
+        btn.disabled = false;
+        setTimeout(() => {
+            bar.classList.remove('active');
+            status.textContent = '';
+        }, 3000);
+    }
+
+    // Initialize previews
+    createPreview('iphonePreview', false);
+    createPreview('ipadPreview', true);
+    </script>
+</body>
+</html>
