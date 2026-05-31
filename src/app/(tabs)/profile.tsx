@@ -185,6 +185,54 @@ export default function ProfileScreen() {
           </View>
         );
       })}
+
+      {/* Data Management */}
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>
+        Data Management
+      </Text>
+      <Pressable
+        style={({ pressed }) => [
+          styles.deleteButton,
+          { opacity: pressed ? 0.8 : 1 },
+        ]}
+        onPress={() => {
+          Alert.alert(
+            "Delete All Data",
+            "This will permanently delete all your progress, XP, achievements, strategies, and settings. This action cannot be undone.",
+            [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Delete Everything",
+                style: "destructive",
+                onPress: async () => {
+                  await db.execAsync(`
+                    DELETE FROM user_progress;
+                    DELETE FROM xp_log;
+                    DELETE FROM quiz_results;
+                    DELETE FROM achievements;
+                    DELETE FROM strategies;
+                    DELETE FROM settings;
+                  `);
+                  loadData();
+                  Alert.alert(
+                    "Data Deleted",
+                    "All your data has been permanently deleted.",
+                  );
+                },
+              },
+            ],
+          );
+        }}
+      >
+        <Ionicons name="trash-outline" size={20} color="#EF4444" />
+        <View style={styles.deleteContent}>
+          <Text style={styles.deleteTitle}>Delete All Data</Text>
+          <Text style={styles.deleteDesc}>
+            Permanently remove all progress, XP, and settings
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward" size={16} color="#EF4444" />
+      </Pressable>
     </ScrollView>
   );
 }
@@ -275,4 +323,19 @@ const styles = StyleSheet.create({
   progressIcon: { fontSize: 20 },
   progressName: { flex: 1, fontSize: 14, fontWeight: "500" },
   progressCount: { fontSize: 13 },
+  deleteButton: {
+    marginHorizontal: Spacing.four,
+    marginBottom: Spacing.four,
+    borderRadius: 12,
+    padding: Spacing.three,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.three,
+    backgroundColor: "rgba(239,68,68,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(239,68,68,0.2)",
+  },
+  deleteContent: { flex: 1 },
+  deleteTitle: { fontSize: 15, fontWeight: "600", color: "#EF4444" },
+  deleteDesc: { fontSize: 12, color: "#EF4444", opacity: 0.7, marginTop: 2 },
 });
