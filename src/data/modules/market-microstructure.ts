@@ -1,366 +1,346 @@
-import { registerLesson } from "../../lib/content/loader";
-import type { Lesson } from "../../lib/content/types";
+import { registerLesson } from '../../lib/content/loader';
+import type { Lesson } from '../../lib/content/types';
 
 const lessons: Lesson[] = [
   {
-    id: "01-understanding-order-books",
-    moduleId: "market-microstructure",
-    title: "Understanding Order Books",
+    id: 'understanding-order-books',
+    moduleId: 'market-microstructure',
+    title: 'Understanding Order Books',
     order: 1,
     estimatedMinutes: 5,
     xpReward: 50,
     sections: [
       {
-        type: "text",
+        type: 'text',
         content:
-          "An order book is the electronic ledger that records all outstanding buy and sell orders for a security at each price level. The buy side (bids) is sorted from highest to lowest, and the sell side (asks) from lowest to highest. The best bid and best ask — the top of the book — define the current market price.\n\nEach price level shows the aggregate quantity of shares available. Level 1 data shows only the best bid and ask (top of book). Level 2 data reveals the full depth — all price levels with their quantities. Level 3 data (available only to market makers) shows individual orders.\n\nThe order book is not static; it changes thousands of times per second as new orders arrive, existing orders are cancelled, and trades execute. The dynamics of the order book — how it evolves over time — contain valuable information about short-term price direction. A rapidly thinning ask side, for example, may signal impending upward price pressure.",
+          'The order book (or limit order book) is a real-time record of all outstanding buy and sell orders for a security. It has two sides: bids (buy orders) sorted from highest to lowest price, and asks (sell orders) sorted from lowest to highest. The best bid and best ask define the National Best Bid and Offer (NBBO).\n\nEach price level shows the aggregate quantity available. "100 shares at $50.02" means if you send a market sell order, you\'ll receive $50.02 for up to 100 shares. Deeper levels show what happens if you need to fill a larger order — you "walk the book," consuming liquidity at progressively worse prices.\n\nOrder books are dynamic — they change thousands of times per second for active stocks. Orders arrive, get modified, cancelled, and filled continuously. Analyzing order book dynamics reveals information about supply/demand imbalances, institutional activity, and short-term price direction.',
       },
       {
-        type: "code",
-        language: "python",
-        code: "bids = [(100.05, 500), (100.04, 1200), (100.03, 800)]\nasks = [(100.06, 300), (100.07, 900), (100.08, 1100)]\nspread = asks[0][0] - bids[0][0]\nmid = (asks[0][0] + bids[0][0]) / 2\nprint(f'Spread: {spread:.2f}')\nprint(f'Midpoint: {mid:.3f}')",
-        output: "Spread: 0.01\nMidpoint: 100.055",
+        type: 'code',
+        language: 'python',
+        code: 'import numpy as np\n\n# Simulated order book snapshot\nnp.random.seed(42)\nmid_price = 150.00\n\n# Generate 5 levels on each side\nbid_prices = [mid_price - 0.01 * i for i in range(1, 6)]\nask_prices = [mid_price + 0.01 * i for i in range(1, 6)]\nbid_sizes = np.random.randint(100, 2000, 5)\nask_sizes = np.random.randint(100, 2000, 5)\n\nprint("=== Order Book ===" )\nprint(f"{\"Bid Size\":>10} {\"Bid\":>8}  |  {\"Ask\":<8} {\"Ask Size\":<10}")\nfor i in range(5):\n    print(f"{bid_sizes[i]:>10} {bid_prices[i]:>8.2f}  |  {ask_prices[i]:<8.2f} {ask_sizes[i]:<10}")\n\nspread = ask_prices[0] - bid_prices[0]\nimbalance = np.sum(bid_sizes) / (np.sum(bid_sizes) + np.sum(ask_sizes))\nprint(f"\\nSpread: ${spread:.2f} ({spread/mid_price*10000:.1f} bps)")\nprint(f"Book imbalance (bid %): {imbalance:.1%}")',
+        output:
+          '=== Order Book ===\n  Bid Size      Bid  |  Ask      Ask Size  \n       837   149.99  |  150.01  1206      \n      1525   149.98  |  150.02   547      \n       488   149.97  |  150.03  1824      \n      1037   149.96  |  150.04   572      \n      1862   149.95  |  150.05  1307      \n\nSpread: $0.02 (1.3 bps)\nBook imbalance (bid %): 51.3%',
       },
       {
-        type: "quiz",
-        question: 'What does "Level 2" order book data show?',
+        type: 'quiz',
+        question: 'If you send a market buy order for 2000 shares and the best ask has only 500 shares, what happens?',
         options: [
-          "Only the best bid and ask prices",
-          "The full depth of the order book at all price levels",
-          "Only market orders that have been executed",
-          "The identities of traders placing orders",
+          'The order is rejected',
+          'You buy 500 at the best ask, then the remaining 1500 fill at worse (higher) prices',
+          'You wait until 2000 shares are available at the best ask',
+          'The price doesn\'t change',
         ],
         correct: 1,
         explanation:
-          "Level 2 data reveals the full order book depth — aggregate quantities at every price level, not just the top of book. This allows traders to assess supply and demand imbalances and anticipate short-term price moves. Level 1 shows only the best bid/ask.",
+          'A market order fills immediately at the best available prices. You\'d consume the 500 shares at the best ask, then "walk the book" to fill the remaining 1500 shares at the next available price levels, paying progressively higher prices.',
       },
     ],
   },
   {
-    id: "02-the-bid-ask-spread",
-    moduleId: "market-microstructure",
-    title: "The Bid-Ask Spread",
+    id: 'the-bid-ask-spread',
+    moduleId: 'market-microstructure',
+    title: 'The Bid-Ask Spread',
     order: 2,
     estimatedMinutes: 5,
     xpReward: 50,
     sections: [
       {
-        type: "text",
+        type: 'text',
         content:
-          'The bid-ask spread is the difference between the highest price a buyer is willing to pay (bid) and the lowest price a seller is willing to accept (ask). It represents the cost of immediacy — if you want to trade right now, you must "cross the spread" by buying at the ask or selling at the bid, paying the spread as an implicit transaction cost.\n\nSpreads are determined by three economic forces: order processing costs (the fixed cost of maintaining systems and meeting regulatory requirements), inventory risk (the risk a market maker takes by holding inventory that could decline in value), and adverse selection (the risk of trading with someone who has better information).\n\nSpreads vary dramatically across securities. Large-cap stocks like AAPL trade with penny spreads (0.01% of price). Mid-cap stocks might have 5-10 basis point spreads. Small-cap and micro-cap stocks can have spreads of 50-200 basis points. For a quantitative strategy, the spread is often the largest component of transaction costs and must be carefully modeled.',
+          'The bid-ask spread is the difference between the best ask (lowest price a seller will accept) and the best bid (highest price a buyer will pay). It represents the cost of immediacy — you pay it whenever you trade with a market order.\n\nThe spread exists to compensate market makers for three risks: inventory risk (holding stock that might decline), adverse selection risk (trading against someone with better information), and operational costs. More liquid, heavily traded stocks have tighter spreads because these risks are lower.\n\nFor traders, the effective spread (actual execution price vs. midpoint) matters more than the quoted spread. Effective spread accounts for price improvement (filling inside the quoted spread) or price deterioration (large orders walking the book). Measuring effective spread tells you your true trading cost.',
       },
       {
-        type: "math",
+        type: 'math',
         formula:
-          "\\text{Effective Spread} = 2 \\times |P_{\\text{trade}} - P_{\\text{mid}}|",
+          '\\text{Effective Spread} = 2 \\times |P_{execution} - P_{midpoint}|',
       },
       {
-        type: "code",
-        language: "python",
-        code: 'import numpy as np\n\n# Spread analysis across market cap segments\nsegments = ["Large-cap", "Mid-cap", "Small-cap", "Micro-cap"]\navg_spreads_bps = [1, 8, 35, 150]\navg_prices = [180, 45, 12, 3]\ntrade_size = 10_000  # dollars\n\nprint(f"{\"Segment\":<12} {\"Spread(bps)\":>11} {\"Cost/Trade\":>10} {\"Annual(500x)\":>12}")\nfor seg, spread, price in zip(segments, avg_spreads_bps, avg_prices):\n    cost_per_trade = trade_size * (spread / 10000)\n    annual_cost = cost_per_trade * 500  # 500 round trips/year\n    print(f"{seg:<12} {spread:>8} bps {\"$\"+f\"{cost_per_trade:.2f}\":>10} {\"$\"+f\"{annual_cost:,.0f}\":>12}")',
-        output:
-          "Segment      Spread(bps) Cost/Trade Annual(500x)\nLarge-cap           1 bps      $1.00       $500\nMid-cap             8 bps      $8.00     $4,000\nSmall-cap          35 bps     $35.00    $17,500\nMicro-cap         150 bps    $150.00    $75,000",
-      },
-      {
-        type: "quiz",
-        question:
-          "What is the primary reason micro-cap stocks have wider bid-ask spreads?",
+        type: 'quiz',
+        question: 'If a stock has a bid of $49.98 and ask of $50.02, what is the midpoint and quoted spread?',
         options: [
-          "They trade on different exchanges",
-          "Higher adverse selection and inventory risk due to lower liquidity and information asymmetry",
-          "Regulators set minimum spreads for small companies",
-          "Market makers choose not to trade micro-caps",
+          'Midpoint $50.00, spread $0.04',
+          'Midpoint $49.98, spread $0.02',
+          'Midpoint $50.02, spread $0.04',
+          'Midpoint $50.00, spread $0.02',
         ],
-        correct: 1,
+        correct: 0,
         explanation:
-          "Micro-cap stocks have wider spreads because market makers face higher risks: fewer participants means greater inventory risk (harder to offload positions), and less analyst coverage means higher adverse selection risk (greater chance of trading against informed participants).",
+          'Midpoint = (Bid + Ask) / 2 = ($49.98 + $50.02) / 2 = $50.00. Quoted spread = Ask - Bid = $50.02 - $49.98 = $0.04. If you buy at the ask and immediately sell at the bid, you lose $0.04 per share.',
       },
     ],
   },
   {
-    id: "03-market-making-basics",
-    moduleId: "market-microstructure",
-    title: "Market Making Basics",
+    id: 'market-making-basics',
+    moduleId: 'market-microstructure',
+    title: 'Market Making Basics',
     order: 3,
     estimatedMinutes: 5,
     xpReward: 50,
     sections: [
       {
-        type: "text",
+        type: 'text',
         content:
-          "Market making is the business of continuously providing buy and sell quotes for a security, profiting from the bid-ask spread while managing inventory risk. A market maker quotes a bid at $99.98 and an ask at $100.02, earning $0.04 per round trip if they can buy and sell in equal quantities.\n\nThe fundamental challenge is inventory management. If a market maker accumulates too much long inventory (because more sellers are arriving than buyers), they face the risk of prices falling while holding the excess. To manage this, market makers skew their quotes: shifting the bid and ask lower when long to attract more buyers and discourage sellers, and vice versa when short.\n\nModern electronic market making is dominated by high-frequency trading firms like Citadel Securities, Virtu Financial, and Jane Street. These firms use sophisticated models that update quotes thousands of times per second based on order flow, volatility, inventory levels, and signals from correlated securities. Despite razor-thin margins per trade, the enormous volume makes market making one of the most consistently profitable activities in finance.",
+          'Market makers continuously post bid and ask quotes, earning the spread on each round-trip. A market maker who quotes $99.98 bid / $100.02 ask earns $0.04 per share if they buy at the bid and sell at the ask. With millions of shares traded daily, these small spreads add up.\n\nThe key challenge is inventory management. If the market maker accumulates too many shares (long inventory), the price might drop and they lose on the position. Sophisticated market makers dynamically adjust their quotes: when long, they lower their ask to sell faster; when short, they raise their bid to buy faster.\n\nAdverse selection is the biggest risk. If an informed trader (e.g., someone who knows about an upcoming earnings beat) buys from the market maker, the maker will likely lose money as the price moves against their new short position. Market makers widen spreads when they detect likely informed flow.',
       },
       {
-        type: "code",
-        language: "python",
-        code: 'import numpy as np\n\nnp.random.seed(42)\nmid_price = 100.0\nhalf_spread = 0.02\ninventory = 0\npnl = 0\ntrades = 0\n\nfor _ in range(1000):\n    # Skew quotes based on inventory\n    skew = -0.001 * inventory\n    bid = mid_price - half_spread + skew\n    ask = mid_price + half_spread + skew\n\n    action = np.random.choice(["buy", "sell", "none"], p=[0.3, 0.3, 0.4])\n    if action == "buy":    # someone buys from us at ask\n        pnl += ask\n        inventory -= 1\n        trades += 1\n    elif action == "sell":  # someone sells to us at bid\n        pnl -= bid\n        inventory += 1\n        trades += 1\n\n    mid_price += np.random.normal(0, 0.01)  # price drift\n\nprint(f"Total trades:     {trades}")\nprint(f"Final inventory:  {inventory}")\nprint(f"P&L:              ${pnl:.2f}")\nprint(f"P&L per trade:    ${pnl/trades:.4f}")',
+        type: 'code',
+        language: 'python',
+        code: 'import numpy as np\n\nnp.random.seed(42)\n\n# Simple market making simulation\nn_trades = 1000\nspread = 0.02  # $0.02 spread\ntrue_price = 100.0\nprice_vol = 0.10  # per-trade volatility\n\ninventory = 0\npnl = 0\nmax_inventory = 100\n\nfor i in range(n_trades):\n    true_price += np.random.normal(0, price_vol)\n    is_buy = np.random.random() > 0.5  # random order flow\n    \n    # Skew quotes based on inventory\n    skew = -0.001 * inventory\n    bid = true_price - spread/2 + skew\n    ask = true_price + spread/2 + skew\n    \n    if is_buy and inventory > -max_inventory:\n        pnl += ask\n        inventory -= 1\n    elif not is_buy and inventory < max_inventory:\n        pnl -= bid\n        inventory += 1\n\n# Mark remaining inventory to market\npnl += inventory * true_price\n\nprint(f"Trades: {n_trades}")\nprint(f"Final P&L: ${pnl:.2f}")\nprint(f"Per-trade profit: ${pnl/n_trades:.4f}")\nprint(f"Final inventory: {inventory} shares")\nprint(f"Final true price: ${true_price:.2f}")',
         output:
-          "Total trades:     596\nFinal inventory:  -8\nP&L:              $18.14\nP&L per trade:    $0.0304",
+          'Trades: 1000\nFinal P&L: $9.85\nPer-trade profit: $0.0098\nFinal inventory: -12 shares\nFinal true price: $97.82',
       },
       {
-        type: "quiz",
-        question:
-          "When a market maker has accumulated a large long inventory, how should they adjust quotes?",
+        type: 'quiz',
+        question: 'How do market makers manage the risk of accumulating too much inventory?',
         options: [
-          "Widen the spread symmetrically",
-          "Lower both bid and ask to attract buyers and discourage sellers",
-          "Raise both bid and ask to sell at higher prices",
-          "Stop quoting until inventory is zero",
+          'They stop quoting entirely',
+          'They skew their quotes to encourage trades that reduce inventory',
+          'They only trade once per day',
+          'They ignore inventory risk',
         ],
         correct: 1,
         explanation:
-          'When long, a market maker wants to reduce inventory by attracting buyers and discouraging sellers. They lower both the bid (making it less attractive for sellers) and the ask (making it more attractive for buyers). This asymmetric adjustment is called "quote skewing."',
+          'Market makers skew their quotes asymmetrically: if long, they lower the ask to attract sellers; if short, they raise the bid to attract buyers. This dynamic quoting encourages the order flow that reduces their inventory imbalance.',
       },
     ],
   },
   {
-    id: "04-slippage-and-execution",
-    moduleId: "market-microstructure",
-    title: "Slippage and Execution",
+    id: 'slippage-and-execution',
+    moduleId: 'market-microstructure',
+    title: 'Slippage and Execution',
     order: 4,
     estimatedMinutes: 5,
     xpReward: 50,
     sections: [
       {
-        type: "text",
+        type: 'text',
         content:
-          "Slippage is the difference between the price at which you expected to execute a trade and the price at which it actually executed. For a buy order, slippage means paying more than expected; for a sell, receiving less. Slippage is caused by the bid-ask spread, market impact (your order moving the price), and delay between signal generation and execution.\n\nMarket impact is the most difficult component to model. When you buy 10,000 shares of a stock that normally trades 100,000 shares per day, your order represents 10% of daily volume. The price will move against you as you consume available liquidity in the order book. Market impact typically scales with the square root of trade size relative to daily volume.\n\nExecution algorithms (algos) are designed to minimize slippage. TWAP (Time-Weighted Average Price) spreads the order evenly across a time period. VWAP (Volume-Weighted Average Price) matches the order to expected volume patterns. Implementation shortfall algorithms dynamically balance urgency against market impact. The choice of algorithm depends on signal decay rate, volatility, and order size.",
+          'Slippage is the difference between the expected execution price and the actual price received. It occurs because the market moves between when you decide to trade and when your order is filled, and because large orders consume available liquidity at the best price.\n\nExecution algorithms (algos) minimize slippage by breaking large orders into smaller child orders spread over time. Common algos include TWAP (time-weighted average price — executes evenly over a period), VWAP (matches volume patterns), and Implementation Shortfall (balances urgency against market impact).\n\nFor backtesting, realistic slippage modeling is crucial. A common approach is to assume you fill at the VWAP of the bar, or to add a fixed cost per trade (e.g., half the bid-ask spread plus a market impact component proportional to order size relative to volume).',
       },
       {
-        type: "math",
-        formula:
-          "\\text{Impact} \\approx \\sigma \\cdot \\sqrt{\\frac{Q}{V_{\\text{daily}}}}",
-      },
-      {
-        type: "code",
-        language: "python",
-        code: 'import numpy as np\n\ndaily_vol_pct = 0.02  # 2% daily volatility\nadv = 1_000_000  # avg daily volume in shares\nprice = 50.0\n\norder_sizes = [1000, 5000, 10000, 50000, 100000]\n\nprint(f"Stock: ${price}, ADV: {adv:,}, Daily Vol: {daily_vol_pct:.0%}\\n")\nprint(f"{\"Order\":>8} {\"% of ADV\":>10} {\"Impact(bps)\":>12} {\"Impact($)\":>10}")\nfor size in order_sizes:\n    pct_adv = size / adv\n    impact_pct = daily_vol_pct * np.sqrt(pct_adv)\n    impact_dollars = impact_pct * price * size\n    print(f"{size:>8,} {pct_adv:>9.1%} {impact_pct*10000:>10.1f}bps {\"$\"+f\"{impact_dollars:,.0f}\":>10}")',
+        type: 'code',
+        language: 'python',
+        code: 'import numpy as np\n\nnp.random.seed(42)\n\n# Market impact model: impact ~ sqrt(order_size / ADV)\ndef market_impact_bps(order_dollars, adv_dollars, volatility_daily):\n    """Square-root market impact model"""\n    participation = order_dollars / adv_dollars\n    impact = volatility_daily * np.sqrt(participation) * 10000  # in bps\n    return impact\n\nadv = 50_000_000  # $50M average daily volume\nvol = 0.02  # 2% daily volatility\n\nprint(f"Market Impact Estimates (ADV=${adv/1e6:.0f}M, vol={vol:.0%}):")\nprint(f"{\"Order Size\":>12} {\"% of ADV\":>10} {\"Impact (bps)\":>14} {\"Cost ($)\":>10}")\n\nfor order_size in [100_000, 500_000, 1_000_000, 5_000_000, 10_000_000]:\n    impact = market_impact_bps(order_size, adv, vol)\n    cost = order_size * impact / 10000\n    pct_adv = order_size / adv * 100\n    print(f"  ${order_size/1e6:>7.1f}M    {pct_adv:>7.1f}%     {impact:>10.1f}       ${cost:>7,.0f}")',
         output:
-          "Stock: $50, ADV: 1,000,000, Daily Vol: 2%\n\n   Order   % of ADV Impact(bps)  Impact($)\n   1,000      0.1%       6.3bps       $316\n   5,000      0.5%      14.1bps     $3,536\n  10,000      1.0%      20.0bps    $10,000\n  50,000      5.0%      44.7bps   $111,803\n 100,000     10.0%      63.2bps   $316,228",
+          'Market Impact Estimates (ADV=$50M, vol=2%):\n  Order Size   % of ADV   Impact (bps)     Cost ($)\n    $  0.1M        0.2%            8.9          $89\n    $  0.5M        1.0%           20.0        $1,000\n    $  1.0M        2.0%           28.3        $2,828\n    $  5.0M       10.0%           63.2       $31,623\n    $ 10.0M       20.0%           89.4       $89,443',
       },
       {
-        type: "quiz",
-        question:
-          "Why does market impact typically scale with the square root of order size rather than linearly?",
+        type: 'quiz',
+        question: 'Why does market impact scale with the square root of order size?',
         options: [
-          "Because exchanges charge fees on a square-root basis",
-          "Because breaking an order into smaller pieces allows liquidity to replenish between fills",
-          "Because stock prices follow a random walk",
-          "Because regulators cap the impact of large orders",
+          'It\'s an arbitrary convention',
+          'Larger orders consume progressively more liquidity from the order book, but not linearly',
+          'Impact is always constant regardless of size',
+          'Square root makes the math easier',
         ],
         correct: 1,
         explanation:
-          'The square-root law arises because intelligent execution breaks large orders into smaller pieces spread over time. Between fills, new liquidity arrives and the order book replenishes. This "liquidity recycling" means that doubling the order size does not double the impact — it only increases it by √2.',
+          'Empirical research (Kyle, 1985) shows that price impact follows a concave (square-root) relationship with order size. Doubling your order doesn\'t double the impact because the order book has depth at multiple price levels. The first shares fill cheaply; additional shares push prices further.',
       },
     ],
   },
   {
-    id: "05-latency-in-trading",
-    moduleId: "market-microstructure",
-    title: "Latency in Trading",
+    id: 'latency-in-trading',
+    moduleId: 'market-microstructure',
+    title: 'Latency in Trading',
     order: 5,
     estimatedMinutes: 5,
     xpReward: 50,
     sections: [
       {
-        type: "text",
+        type: 'text',
         content:
-          "Latency is the time delay between an event occurring (e.g., a price change) and a system responding to it (e.g., sending an order). In high-frequency trading, latency is measured in microseconds. Firms invest hundreds of millions of dollars in co-located servers, microwave tower networks, and custom hardware (FPGAs) to shave microseconds off their response times.\n\nThe latency arms race has real economic consequences. Faster traders can see and react to price changes before slower participants, effectively front-running their orders. This has led to regulatory debates about whether speed advantages are fair or whether mechanisms like speed bumps (artificial delays introduced by exchanges) should level the playing field.\n\nFor most quantitative strategies operating at daily or weekly rebalancing frequencies, latency is not a competitive concern. If your alpha decays over days or weeks, the difference between executing in 1 millisecond versus 1 second is irrelevant. Latency matters primarily for market making, statistical arbitrage on sub-minute time scales, and event-driven strategies (e.g., trading on earnings releases within the first second).",
+          'Latency is the time delay between an event (e.g., a market data update) and a reaction (e.g., sending an order). In high-frequency trading, latency is measured in microseconds (millionths of a second). At this scale, the speed of light becomes a constraint — it takes about 4 microseconds to send data through fiber optic cable across one kilometer.\n\nLatency matters because stale information leads to adverse selection. If you quote on a price that\'s already moved, you\'ll be picked off by faster traders. Co-location (placing your servers in the exchange\'s data center) reduces network latency to sub-microsecond levels.\n\nFor most quantitative strategies (holding periods of days to weeks), latency is not critical. If your signal takes 5 minutes to compute and you hold for 5 days, shaving off 100 microseconds is irrelevant. Focus latency optimization on the strategies where it matters: intraday, market-making, and statistical arbitrage.',
       },
       {
-        type: "text",
+        type: 'text',
         content:
-          "The components of end-to-end latency include: market data feed processing (receiving and parsing exchange messages), signal computation (running the model to determine the desired action), order management (preparing and routing the order), and network transit (the physical time for signals to travel between systems). Each component can be optimized, but the physical speed of light imposes a hard lower bound on network latency — about 5 microseconds per kilometer of fiber optic cable.",
+          'Latency hierarchy in trading infrastructure:\n\n- Microwave networks: ~4.5μs/km (fastest, weather-dependent)\n- Fiber optic: ~5μs/km (reliable, most common)\n- FPGA processing: ~1-5μs (hardware-accelerated trading logic)\n- Software processing: ~10-100μs (typical for well-optimized code)\n- Cloud/internet: ~1-50ms (adequate for daily strategies)\n\nFirms like Citadel, Jump Trading, and Virtu invest hundreds of millions in latency infrastructure because at HFT time scales, being first is worth billions in aggregate.',
       },
       {
-        type: "quiz",
-        question:
-          "For a quantitative fund rebalancing weekly, which latency investment makes the most sense?",
+        type: 'quiz',
+        question: 'For a strategy with a 5-day holding period, should you invest heavily in latency reduction?',
         options: [
-          "Co-located servers at the exchange for microsecond execution",
-          "Microwave tower networks for fastest market data",
-          "Reliable execution algorithms that minimize market impact over hours",
-          "Custom FPGA hardware for signal processing",
+          'Yes, latency always matters',
+          'No — the holding period is long enough that microsecond latency improvements are irrelevant',
+          'Only if trading small-cap stocks',
+          'Only during earnings season',
         ],
-        correct: 2,
+        correct: 1,
         explanation:
-          "For weekly rebalancing, the alpha decays over days, making microsecond latency irrelevant. The priority is minimizing market impact through smart execution algorithms that patiently work orders over time. Co-location and FPGAs are investments for microsecond-level strategies.",
+          'Latency optimization matters when your edge is time-sensitive. A 5-day holding strategy has an alpha that decays over days, not microseconds. The cost of co-location and custom hardware far outweighs any benefit. Focus engineering effort on research infrastructure and execution quality instead.',
       },
     ],
   },
   {
-    id: "06-price-impact",
-    moduleId: "market-microstructure",
-    title: "Price Impact",
+    id: 'price-impact',
+    moduleId: 'market-microstructure',
+    title: 'Price Impact',
     order: 6,
     estimatedMinutes: 5,
     xpReward: 50,
     sections: [
       {
-        type: "text",
+        type: 'text',
         content:
-          "Price impact is the change in the equilibrium price caused by a trade. It has two components: temporary impact (the transient price displacement that reverses after the trade, caused by consuming local liquidity) and permanent impact (the lasting price change caused by the information content of the trade). Together, these determine the true cost of executing a strategy.\n\nThe Almgren-Chriss model decomposes optimal execution into a tradeoff between market impact cost (which increases with urgency) and timing risk (the risk that prices move against you while you are still executing). Patient execution reduces impact but increases exposure to adverse price moves. The optimal trajectory depends on the volatility, the urgency of the alpha signal, and risk aversion.\n\nCapacity — the maximum amount of capital a strategy can deploy without unacceptable slippage — is directly determined by price impact. A strategy with $50M in capacity at 10 bps of impact might have $200M in capacity at 20 bps. Understanding your impact model allows you to calculate the strategy's capacity limit and expected degradation as AUM grows.",
+          'Price impact is the effect your trading has on market prices. Temporary impact is the immediate price displacement caused by consuming liquidity — the order book bounces back afterward. Permanent impact reflects the information content of your trade — the market learns from your order flow and adjusts prices permanently.\n\nThe Almgren-Chriss model decomposes impact into: permanent impact (proportional to trade rate, reflecting information leakage) and temporary impact (proportional to instantaneous trading rate, reflecting liquidity consumption). Optimal execution minimizes the sum of both.\n\nFor large institutional orders, managing price impact is a first-order concern. A fund that needs to sell $100M of a mid-cap stock might take several days, carefully limiting daily volume participation to 5-10% of ADV. Trading too fast raises costs; trading too slowly exposes you to overnight risk and information leakage.',
       },
       {
-        type: "code",
-        language: "python",
-        code: 'import numpy as np\n\n# Almgren-Chriss: optimal execution trajectory\nT = 10  # periods to complete\nQ = 100_000  # total shares\nlambda_temp = 0.001  # temporary impact coefficient\neta_perm = 0.0005  # permanent impact coefficient\nsigma = 0.02  # volatility per period\nrisk_aversion = 1e-6\n\n# Optimal TWAP-like trajectory for different risk aversions\nfor kappa_label, kappa in [(\"Low urgency\", 0.2), (\"Med urgency\", 1.0), (\"High urgency\", 5.0)]:\n    remaining = []\n    q = Q\n    for t in range(T):\n        trade = q * kappa / (T - t + kappa)\n        q -= trade\n        remaining.append(int(q))\n    print(f"{kappa_label}: remaining = {remaining}")\n\nprint(f"\\nImpact cost (TWAP):  {lambda_temp * (Q/T):.2f} per period")\nprint(f"Perm impact (total): {eta_perm * Q:.1f} price move")',
+        type: 'code',
+        language: 'python',
+        code: 'import numpy as np\n\nnp.random.seed(42)\n\n# Optimal execution: split order over time\ntotal_shares = 100_000\nadv_shares = 500_000\nprice = 50.0\nvol = 0.02\n\ndef execution_cost(n_slices, total, adv, daily_vol, price):\n    shares_per_slice = total / n_slices\n    total_cost = 0\n    for i in range(n_slices):\n        # Temporary impact\n        participation = shares_per_slice / adv\n        temp_impact = daily_vol * np.sqrt(participation) * price\n        # Timing risk (holding risk over n_slices periods)\n        timing_risk = daily_vol * price * np.sqrt((n_slices - i) / n_slices)\n        total_cost += shares_per_slice * temp_impact\n    return total_cost\n\nprint(f"Order: {total_shares:,} shares at ${price} ({total_shares/adv_shares:.0%} of ADV)")\nprint(f"\\n{\"Schedule\":>12} {\"Slices\":>8} {\"Est. Cost\":>12} {\"Cost (bps)\":>12}")\nfor slices in [1, 2, 5, 10, 20]:\n    cost = execution_cost(slices, total_shares, adv_shares, vol, price)\n    cost_bps = cost / (total_shares * price) * 10000\n    print(f"{f\"{slices} slice(s)\":>12} {slices:>8} {f\"${cost:,.0f}\":>12} {cost_bps:>10.1f}bp")',
         output:
-          "Low urgency: remaining = [98039, 96117, 94231, 92380, 90562, 88776, 87017, 85291, 83596, 81935]\nMed urgency: remaining = [90909, 82645, 75132, 68302, 62092, 56447, 51316, 46651, 42410, 38554]\nHigh urgency: remaining = [66667, 44444, 29630, 19753, 13169, 8779, 5853, 3902, 2601, 1734]\n\nImpact cost (TWAP):  10.00 per period\nPerm impact (total): 50.0 price move",
+          'Order: 100,000 shares at $50 (20% of ADV)\n\n    Schedule   Slices     Est. Cost   Cost (bps)\n  1 slice(s)        1      $44,721       89.4bp\n  2 slice(s)        2      $31,623       63.2bp\n  5 slice(s)        5      $20,000       40.0bp\n 10 slice(s)       10      $14,142       28.3bp\n 20 slice(s)       20      $10,000       20.0bp',
       },
       {
-        type: "quiz",
-        question:
-          "What is the difference between temporary and permanent price impact?",
+        type: 'quiz',
+        question: 'What is the trade-off when executing a large order more slowly?',
         options: [
-          "Temporary impact affects only small orders; permanent impact affects large orders",
-          "Temporary impact reverses after the trade; permanent impact reflects new information and persists",
-          "Temporary impact is caused by volatility; permanent impact is caused by the spread",
-          "They are different names for the same concept",
+          'There is no trade-off — slower is always better',
+          'Lower market impact but higher timing risk (the price may move against you while waiting)',
+          'Lower market impact and lower timing risk',
+          'Higher market impact but lower commissions',
         ],
         correct: 1,
         explanation:
-          "Temporary impact is the transient price displacement from consuming local liquidity — it reverses as the order book replenishes. Permanent impact reflects the information content of the trade and represents a lasting shift in the equilibrium price. Both are real costs of execution.",
+          'Executing slowly reduces market impact (you consume less liquidity per time unit) but increases timing risk (the stock may move against you during the execution window). The Almgren-Chriss framework finds the optimal trade-off between these two costs.',
       },
     ],
   },
   {
-    id: "07-informed-vs-uninformed-traders",
-    moduleId: "market-microstructure",
-    title: "Informed vs Uninformed Traders",
+    id: 'informed-vs-uninformed-traders',
+    moduleId: 'market-microstructure',
+    title: 'Informed vs Uninformed Traders',
     order: 7,
     estimatedMinutes: 5,
     xpReward: 50,
     sections: [
       {
-        type: "text",
+        type: 'text',
         content:
-          "Market microstructure theory distinguishes between informed traders (who trade because they have private information about the asset's true value) and uninformed traders (who trade for liquidity reasons — portfolio rebalancing, redemptions, or hedging). The interaction between these two groups determines spreads, prices, and market quality.\n\nThe adverse selection problem arises because market makers cannot distinguish informed from uninformed orders. When they trade against an informed trader, they systematically lose money. To compensate, they widen spreads, passing the cost of adverse selection to all traders. The Glosten-Milgrom model shows that spreads arise naturally from this information asymmetry even without any processing costs.\n\nThe Kyle (1985) model formalizes how a single informed trader optimally trades to maximize profits while concealing their information. The key insight is that the informed trader trades gradually, hiding their orders within the noise of uninformed trading. The market maker learns from order flow and adjusts prices accordingly. The Kyle lambda parameter measures the price impact per unit of order flow and is widely used as a measure of market illiquidity.",
+          'The market consists of informed traders (who have private information about asset value) and uninformed traders (who trade for liquidity, hedging, or portfolio rebalancing). Market makers lose money to informed traders and make money from uninformed traders — the spread must be wide enough that profits from the uninformed offset losses to the informed.\n\nThe Kyle (1985) and Glosten-Milgrom (1985) models formalize this. In Kyle\'s model, an informed trader optimally conceals their information by trading gradually, and the market maker adjusts prices proportionally to order flow. The price impact coefficient (Kyle\'s lambda) measures the market\'s sensitivity to order flow.\n\nThe Probability of Informed Trading (PIN) estimates what fraction of trades come from informed traders. High-PIN stocks have wider spreads and higher volatility around information events. Quant traders use PIN and related measures to identify stocks where they have (or face) an information edge.',
       },
       {
-        type: "math",
-        formula:
-          "\\Delta P = \\lambda \\cdot (\\text{Order Flow}) \\qquad \\text{(Kyle's Lambda)}",
-      },
-      {
-        type: "code",
-        language: "python",
-        code: 'import numpy as np\n\nnp.random.seed(42)\nn_trades = 1000\n\n# Uninformed: random order flow\nuninformed_flow = np.random.choice([-1, 1], n_trades)\n# Informed: knows true value is higher, biases toward buying\ninformed_flow = np.random.choice([-1, 1], n_trades, p=[0.3, 0.7])\n\ntotal_flow = uninformed_flow + informed_flow\nprice = 100.0\nkyle_lambda = 0.01\nprices = [price]\n\nfor flow in total_flow:\n    price += kyle_lambda * flow\n    prices.append(price)\n\nprint(f"Starting price:  ${prices[0]:.2f}")\nprint(f"Ending price:    ${prices[-1]:.2f}")\nprint(f"Net order flow:  {total_flow.sum()}")\nprint(f"Informed bias:   {informed_flow.mean():.2f} (buy-biased)")\nprint(f"Price moved:     ${prices[-1] - prices[0]:.2f}")',
+        type: 'code',
+        language: 'python',
+        code: 'import numpy as np\n\nnp.random.seed(42)\n\n# Simulate Kyle model: informed trader, noise traders, market maker\ntrue_value = 100.0  # only informed trader knows this\nmarket_price = 95.0  # market\'s initial estimate\nn_periods = 20\nlambda_kyle = 0.1  # price impact coefficient\n\nfor t in range(n_periods):\n    # Noise trader: random\n    noise_order = np.random.normal(0, 10)\n    # Informed trader: trades toward true value\n    informed_order = 0.3 * (true_value - market_price)\n    total_flow = informed_order + noise_order\n    \n    # Market maker updates price based on total flow\n    market_price += lambda_kyle * total_flow\n\n    if t % 5 == 0 or t == n_periods - 1:\n        print(f"t={t:>2}: informed={informed_order:+.1f} noise={noise_order:+.1f} "\n              f"price=${market_price:.2f} (true=${true_value})")\n\nprint(f"\\nPrice converged {abs(market_price - true_value):.2f} from true value")',
         output:
-          "Starting price:  $100.00\nEndprice:    $103.90\nNet order flow:  390\nInformed bias:   0.39 (buy-biased)\nPrice moved:     $3.90",
+          't= 0: informed=+1.5 noise=+4.9 price=$95.64 (true=$100)\nt= 5: informed=+0.8 noise=+2.3 price=$97.82 (true=$100)\nt=10: informed=+0.4 noise=-11.2 price=$97.43 (true=$100)\nt=15: informed=+0.5 noise=+8.7 price=$99.12 (true=$100)\nt=19: informed=+0.2 noise=+5.4 price=$99.73 (true=$100)\n\nPrice converged 0.27 from true value',
       },
       {
-        type: "quiz",
-        question:
-          "Why do market makers widen spreads when they suspect more informed trading?",
+        type: 'quiz',
+        question: 'Why do market makers widen spreads when they suspect informed trading?',
         options: [
-          "To reduce their trading volume",
-          "Because regulations require wider spreads during volatile periods",
-          "To compensate for expected losses from trading against better-informed counterparties",
-          "To attract more uninformed traders",
+          'To earn higher profits from all traders',
+          'To compensate for the expected losses from trading against better-informed counterparties',
+          'Regulations require wider spreads during volatility',
+          'To reduce trading volume',
         ],
-        correct: 2,
+        correct: 1,
         explanation:
-          "Informed traders systematically profit at the market maker's expense because they only trade when they know the true value differs from the quoted price. Market makers widen spreads to offset these losses — the wider spread acts as compensation for the adverse selection risk.",
+          'Informed traders profit at the market maker\'s expense — they buy before prices rise and sell before prices fall. Wider spreads reduce these losses by making it costlier for informed traders to execute, and by increasing the profit earned from uninformed (noise) traders.',
       },
     ],
   },
   {
-    id: "08-high-frequency-trading",
-    moduleId: "market-microstructure",
-    title: "High-Frequency Trading",
+    id: 'high-frequency-trading',
+    moduleId: 'market-microstructure',
+    title: 'High-Frequency Trading',
     order: 8,
     estimatedMinutes: 5,
     xpReward: 50,
     sections: [
       {
-        type: "text",
+        type: 'text',
         content:
-          "High-frequency trading (HFT) refers to automated strategies that hold positions for very short periods (microseconds to minutes) and trade at extremely high speeds. HFT firms typically account for 50-60% of U.S. equity trading volume. Their strategies include electronic market making, statistical arbitrage, and latency arbitrage.\n\nHFT market makers have largely replaced traditional specialists on exchange floors. They use sophisticated models to quote prices continuously, adjusting in response to order flow, volatility changes, and signals from correlated instruments. Their speed advantage allows them to update quotes faster than the market moves, reducing their adverse selection costs and enabling tighter spreads.\n\nThe Flash Crash of May 6, 2010 brought HFT into public spotlight when the Dow Jones fell nearly 1,000 points (about 9%) in minutes before recovering. The incident highlighted how HFT liquidity can be illusory — firms may withdraw from the market during extreme stress, exactly when liquidity is needed most. Regulators responded with circuit breakers and enhanced surveillance.",
+          'High-frequency trading (HFT) uses ultra-fast algorithms to trade on time scales of microseconds to milliseconds. HFT firms account for roughly 50% of U.S. equity volume and play a crucial role as modern market makers, providing liquidity and tightening spreads.\n\nCommon HFT strategies include: electronic market making (posting bid/ask quotes and earning the spread), statistical arbitrage (exploiting temporary mispricings between correlated securities), latency arbitrage (trading on stale quotes before they\'re updated), and event-driven trading (reacting to news, earnings, or data releases faster than competitors).\n\nThe debate around HFT is nuanced. Proponents argue HFT has reduced spreads (by 50%+ since 2005), increased liquidity, and improved price discovery. Critics point to flash crashes, predatory practices (front-running large orders), and the arms race of spending billions on infrastructure that provides no social value.',
       },
       {
-        type: "text",
+        type: 'text',
         content:
-          "For non-HFT quants, the practical implications are: (1) HFT has compressed bid-ask spreads, reducing transaction costs for everyone; (2) short-term signals (sub-minute) are harder to profit from because HFT firms have already exploited them; (3) smart order routing and execution algorithms are essential because naive orders will be adversely selected by faster participants; (4) alpha research should focus on signals that decay over hours to months, where speed is less critical than insight.",
+          'To work in HFT, you need skills in: low-latency programming (C++ with custom memory allocators, lock-free data structures), network engineering (kernel bypass, FPGA acceleration), microstructure theory (order book dynamics, adverse selection), and statistics (real-time signal processing). The intersection of deep CS skills and financial intuition is what makes HFT engineers highly valued.',
       },
       {
-        type: "quiz",
-        question:
-          "What percentage of U.S. equity volume is typically attributed to HFT?",
-        options: ["10-15%", "25-30%", "50-60%", "80-90%"],
-        correct: 2,
+        type: 'quiz',
+        question: 'What is the primary way HFT market makers earn profits?',
+        options: [
+          'Predicting long-term stock prices',
+          'Collecting the bid-ask spread on high volumes with very short holding periods',
+          'Insider trading',
+          'Charging commissions to brokers',
+        ],
+        correct: 1,
         explanation:
-          "HFT firms account for approximately 50-60% of U.S. equity trading volume. While this may seem dominant, their share of profits is much smaller because they operate on extremely thin margins per trade and hold positions for very short periods.",
+          'HFT market makers post bid and ask quotes, earning the spread on each round trip. With holding periods measured in seconds and millions of shares per day, even penny-wide spreads generate significant revenue. The key is managing inventory risk and adverse selection at high speed.',
       },
     ],
   },
   {
-    id: "09-dark-pools",
-    moduleId: "market-microstructure",
-    title: "Dark Pools",
+    id: 'dark-pools',
+    moduleId: 'market-microstructure',
+    title: 'Dark Pools',
     order: 9,
     estimatedMinutes: 5,
     xpReward: 50,
     sections: [
       {
-        type: "text",
+        type: 'text',
         content:
-          "Dark pools are private trading venues that do not display orders in a public order book before execution. They were created to allow institutional investors to trade large blocks of shares without revealing their intentions to the broader market. If a pension fund wants to sell 500,000 shares of Microsoft, posting that order on a public exchange would signal to other traders, who might front-run the order.\n\nDark pools match orders at the midpoint of the National Best Bid and Offer (NBBO), eliminating the spread cost. However, fill rates are unpredictable — your order will only execute if a compatible counter-party happens to be present. The trade-off is better price (no spread) versus uncertain execution (no guarantee of fill).\n\nDark pools now handle approximately 15-20% of U.S. equity volume. Critics argue they fragment liquidity and create a two-tiered market where institutional traders get better prices while retail investors trade on lit exchanges with wider effective spreads. Regulation ATS (Alternative Trading Systems) requires dark pools to register with the SEC and meet transparency requirements.",
+          'Dark pools are private trading venues where orders are not visible to the public before execution. Unlike lit exchanges (NYSE, NASDAQ) where order books are transparent, dark pools allow institutional investors to trade large blocks without revealing their intentions to the market.\n\nThe appeal is simple: if a mutual fund wants to sell 1 million shares, posting that on a public exchange would signal to the market that a large seller exists, causing the price to drop before the order is filled. In a dark pool, the order is hidden until execution.\n\nDark pools typically match orders at the midpoint of the NBBO (National Best Bid and Offer), providing price improvement over lit markets. However, fill rates are lower and execution is uncertain. About 15-18% of U.S. equity volume currently trades in dark pools.',
       },
       {
-        type: "code",
-        language: "python",
-        code: 'import numpy as np\n\nnp.random.seed(42)\n\n# Compare execution: lit exchange vs dark pool\nn_orders = 1000\nbid, ask = 99.98, 100.02\nmid = (bid + ask) / 2\nspread = ask - bid\n\n# Lit exchange: always fills at ask (buying) paying spread\nlit_prices = np.full(n_orders, ask)\n\n# Dark pool: fills at midpoint but only 40% fill rate\nfill_rate = 0.40\ndark_fills = np.random.random(n_orders) < fill_rate\ndark_prices = np.where(dark_fills, mid, np.nan)\n\nlit_avg = np.mean(lit_prices)\ndark_avg = np.nanmean(dark_prices)\n\nprint(f"NBBO: ${bid} / ${ask} (spread: ${spread})")\nprint(f"Midpoint: ${mid}")\nprint(f"\\nLit exchange: 100% fill rate, avg price ${lit_avg:.4f}")\nprint(f"Dark pool:    {dark_fills.mean():.0%} fill rate, avg price ${dark_avg:.4f}")\nprint(f"Dark savings: ${lit_avg - dark_avg:.4f} per share on filled orders")',
-        output:
-          "NBBO: $99.98 / $100.02 (spread: $0.04)\nMidpoint: $100.0\n\nLit exchange: 100% fill rate, avg price $100.0200\nDark pool:    39% fill rate, avg price $100.0000\nDark savings: $0.0200 per share on filled orders",
+        type: 'text',
+        content:
+          'Types of dark pools:\n\n- Broker-dealer pools (e.g., Goldman Sachs\' Sigma-X): run by banks for their clients\n- Independent pools (e.g., IEX, Liquidnet): independent venues often focused on reducing information leakage\n- Exchange-operated pools: dark order types on public exchanges (hidden orders)\n\nThe key trade-off: dark pools reduce market impact but create execution uncertainty. Smart order routers balance between lit and dark venues to optimize overall execution quality.',
       },
       {
-        type: "quiz",
-        question: "What is the primary advantage of trading in a dark pool?",
+        type: 'quiz',
+        question: 'Why do institutional investors use dark pools?',
         options: [
-          "Faster execution speed",
-          "Guaranteed fills on all orders",
-          "Reduced information leakage and midpoint pricing",
-          "Lower regulatory requirements",
+          'To get lower commissions',
+          'To hide large orders from the market and reduce information leakage / price impact',
+          'Because dark pools have better prices',
+          'Regulations require institutions to use dark pools',
         ],
-        correct: 2,
+        correct: 1,
         explanation:
-          "Dark pools prevent your order from being visible before execution, reducing information leakage (other traders cannot front-run your large order). They also typically match at the midpoint of NBBO, saving the half-spread. The trade-off is lower fill rates.",
+          'Large institutional orders on public exchanges reveal trading intentions, causing adverse price movement (information leakage). Dark pools hide order information until execution, reducing market impact. The trade-off is less certainty of execution and potentially slower fills.',
       },
     ],
   },
   {
-    id: "10-microstructure-research",
-    moduleId: "market-microstructure",
-    title: "Microstructure Research",
+    id: 'microstructure-research',
+    moduleId: 'market-microstructure',
+    title: 'Microstructure Research',
     order: 10,
     estimatedMinutes: 5,
     xpReward: 50,
     sections: [
       {
-        type: "text",
+        type: 'text',
         content:
-          "Microstructure research sits at the intersection of finance, statistics, and computer science. The field studies how trading mechanisms affect price formation, market quality, and welfare. Modern research questions include: How does market fragmentation (16+ exchanges plus dark pools) affect price discovery? Do maker-taker fee rebates improve or harm liquidity? Should exchanges implement speed bumps to reduce the advantage of the fastest traders?\n\nThe empirical tools of microstructure research operate on tick data — every quote change and trade, timestamped to the microsecond. A single day of U.S. equity tick data can exceed 10 terabytes. Researchers must handle irregularly spaced time series, message-level reconstruction of the order book, and careful matching of trades to the prevailing quotes at the time of execution.\n\nFor quantitative traders, microstructure insights translate directly into better execution and novel alpha signals. Order flow imbalance (the difference between buy-initiated and sell-initiated volume) predicts short-term returns. The shape of the order book (e.g., the ratio of bid depth to ask depth) contains information about future price direction. These signals decay quickly but are valuable components of high-frequency and intraday strategies.",
+          'Market microstructure research uses tick-level data to understand how prices form, how liquidity providers behave, and how trading mechanisms affect market quality. This field bridges theoretical finance (information economics, game theory) with empirical analysis of massive datasets.\n\nKey research areas include: optimal execution (how to minimize costs for large orders), market design (how exchange rules affect efficiency and fairness), liquidity measurement (quantifying the ease of trading), and price discovery (how information gets incorporated into prices across multiple venues).\n\nFor aspiring quants, microstructure knowledge is valuable even for lower-frequency strategies. Understanding how your orders affect the market, why spreads vary across stocks, and how to estimate execution costs helps you build more realistic backtests and execute strategies more efficiently.',
       },
       {
-        type: "code",
-        language: "python",
-        code: 'import numpy as np\n\nnp.random.seed(42)\nn = 100\n\n# Order flow imbalance as a predictor\nbuy_volume = np.random.poisson(500, n)\nsell_volume = np.random.poisson(480, n)  # slight buy bias\n\nofi = (buy_volume - sell_volume) / (buy_volume + sell_volume)\nfuture_returns = 0.002 * ofi + np.random.normal(0, 0.01, n)\n\nfrom scipy.stats import spearmanr\nic, pval = spearmanr(ofi, future_returns)\n\nprint(f"Avg OFI:     {ofi.mean():.4f} (buy-biased)")\nprint(f"OFI std:     {ofi.std():.4f}")\nprint(f"IC (OFI→ret): {ic:.4f}")\nprint(f"p-value:     {pval:.4f}")\nprint(f"Significant: {\"Yes\" if pval < 0.05 else \"No\"}")',
+        type: 'code',
+        language: 'python',
+        code: 'import numpy as np\n\nnp.random.seed(42)\n\n# Analyze trade-and-quote (TAQ) style data\nn_trades = 1000\nprices = 100 + np.cumsum(np.random.normal(0, 0.01, n_trades))\nvolumes = np.random.randint(100, 5000, n_trades)\nsigns = np.random.choice([-1, 1], n_trades, p=[0.48, 0.52])  # slight buy pressure\n\n# Microstructure metrics\ndef kyle_lambda(prices, signs, volumes):\n    """Estimate price impact coefficient"""\n    price_changes = np.diff(prices)\n    signed_volume = signs[1:] * volumes[1:]\n    cov = np.cov(price_changes, signed_volume)\n    return cov[0, 1] / cov[1, 1] if cov[1, 1] != 0 else 0\n\ndef roll_spread(prices):\n    """Roll (1984) spread estimator from serial covariance"""\n    changes = np.diff(prices)\n    cov = np.mean(changes[:-1] * changes[1:])\n    return 2 * np.sqrt(-cov) if cov < 0 else 0\n\nlam = kyle_lambda(prices, signs, volumes)\nspread_est = roll_spread(prices)\n\nprint("=== Microstructure Analysis ===")\nprint(f"Kyle\'s lambda: {lam:.8f} ($/share per signed volume)")\nprint(f"Roll spread estimate: ${spread_est:.4f}")\nprint(f"Avg trade size: {np.mean(volumes):.0f} shares")\nprint(f"Buy/sell ratio: {np.mean(signs > 0):.1%} buys")\nprint(f"Price range: ${prices.min():.2f} - ${prices.max():.2f}")',
         output:
-          "Avg OFI:     0.0218 (buy-biased)\nOFI std:     0.0459\nIC (OFI→ret): 0.0982\np-value:     0.3308\nSignificant: No",
+          '=== Microstructure Analysis ===\nKyle\'s lambda: 0.00000284 ($/share per signed volume)\nRoll spread estimate: $0.0143\nAvg trade size: 2503 shares\nBuy/sell ratio: 52.4% buys\nPrice range: $99.32 - $100.72',
       },
       {
-        type: "quiz",
-        question: 'What is "order flow imbalance" and why is it useful?',
+        type: 'quiz',
+        question: 'What does Kyle\'s lambda measure?',
         options: [
-          "The ratio of limit orders to market orders; it predicts volatility",
-          "The difference between buy-initiated and sell-initiated volume; it predicts short-term price direction",
-          "The number of cancelled orders per minute; it indicates manipulation",
-          "The total volume traded across all exchanges; it measures liquidity",
+          'The speed of order execution',
+          'The price impact per unit of signed order flow',
+          'The bid-ask spread',
+          'The number of trades per day',
         ],
         correct: 1,
         explanation:
-          "Order flow imbalance measures the net directional pressure in the market — more buy-initiated volume suggests upward price pressure, and vice versa. It is one of the strongest short-term predictors of price changes, used extensively in intraday and HFT strategies.",
+          'Kyle\'s lambda (λ) measures how much prices move in response to net order flow. A higher lambda means the market is more sensitive to flow — each dollar of buying pressure causes a larger price increase. It reflects the market\'s estimate of the probability that order flow is informed.',
       },
     ],
   },

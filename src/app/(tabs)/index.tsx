@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useEffect, useState } from "react";
@@ -57,6 +58,7 @@ export default function LearnScreen() {
           Quant Academy
         </Text>
         <View style={[styles.levelBadge, { backgroundColor: "#3B82F6" }]}>
+          <Ionicons name="shield-checkmark" size={14} color="#fff" />
           <Text style={styles.levelText}>
             Lv.{level.level} {level.title}
           </Text>

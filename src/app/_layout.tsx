@@ -30,6 +30,7 @@ export default function RootLayout() {
           value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
         >
           <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="onboarding" options={{ animation: "fade" }} />
             <Stack.Screen name="(tabs)" />
             <Stack.Screen
               name="lesson/[moduleId]/index"
