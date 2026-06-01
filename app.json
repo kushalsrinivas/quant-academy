@@ -2,7 +2,7 @@
   "expo": {
     "name": "Quant Academy",
     "slug": "learn-quant-trading",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "learnquanttrading",
@@ -19,7 +19,8 @@
         "backgroundColor": "#000000",
         "foregroundImage": "./assets/images/icon.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.kushalbhai.learnquanttrading"
     },
     "web": {
       "output": "static",
