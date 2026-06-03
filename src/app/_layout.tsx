@@ -19,6 +19,7 @@ function LoadingFallback() {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+
   return (
     <Suspense fallback={<LoadingFallback />}>
       <SQLiteProvider

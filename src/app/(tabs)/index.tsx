@@ -46,85 +46,91 @@ export default function LearnScreen() {
   const level = getLevelForXP(totalXP);
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={{
-        paddingTop: insets.top + Spacing.four,
-        paddingBottom: 100,
-      }}
-    >
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>
-          Quant Academy
-        </Text>
-        <View style={[styles.levelBadge, { backgroundColor: "#3B82F6" }]}>
-          <Ionicons name="shield-checkmark" size={14} color="#fff" />
-          <Text style={styles.levelText}>
-            Lv.{level.level} {level.title}
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={{
+          paddingTop: insets.top + Spacing.four,
+          paddingBottom: 100,
+        }}
+      >
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: colors.text }]}>
+            Quant Academy
           </Text>
-          <Text style={styles.xpText}>{totalXP} XP</Text>
+          <View style={[styles.levelBadge, { backgroundColor: "#3B82F6" }]}>
+            <Ionicons name="shield-checkmark" size={14} color="#fff" />
+            <Text style={styles.levelText}>
+              Lv.{level.level} {level.title}
+            </Text>
+            <Text style={styles.xpText}>{totalXP} XP</Text>
+          </View>
         </View>
-      </View>
 
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>
-        Learning Path
-      </Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Learning Path
+        </Text>
 
-      {MODULES.map((mod) => {
-        const lessons = getLessonsForModule(mod.id);
-        const total = lessons.length || mod.lessonCount;
-        const completed = completedMap[mod.id] ?? 0;
-        const progress = total > 0 ? completed / total : 0;
+        {MODULES.map((mod) => {
+          const lessons = getLessonsForModule(mod.id);
+          const total = lessons.length || mod.lessonCount;
+          const completed = completedMap[mod.id] ?? 0;
+          const progress = total > 0 ? completed / total : 0;
 
-        return (
-          <Pressable
-            key={mod.id}
-            style={({ pressed }) => [
-              styles.moduleCard,
-              {
-                backgroundColor: colors.backgroundElement,
-                opacity: pressed ? 0.8 : 1,
-              },
-            ]}
-            onPress={() => router.push(`/lesson/${mod.id}` as never)}
-          >
-            <View style={styles.moduleHeader}>
-              <Text style={styles.moduleIcon}>{mod.icon}</Text>
-              <View style={styles.moduleInfo}>
-                <Text style={[styles.moduleName, { color: colors.text }]}>
-                  {mod.title}
-                </Text>
+          return (
+            <Pressable
+              key={mod.id}
+              style={({ pressed }) => [
+                styles.moduleCard,
+                {
+                  backgroundColor: colors.backgroundElement,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+              onPress={() => router.push(`/lesson/${mod.id}` as never)}
+            >
+              <View style={styles.moduleHeader}>
+                <Text style={styles.moduleIcon}>{mod.icon}</Text>
+                <View style={styles.moduleInfo}>
+                  <Text style={[styles.moduleName, { color: colors.text }]}>
+                    {mod.title}
+                  </Text>
+                  <Text
+                    style={[styles.moduleDesc, { color: colors.textSecondary }]}
+                  >
+                    {mod.description}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.progressRow}>
+                <View style={styles.progressBarBg}>
+                  <View
+                    style={[
+                      styles.progressBarFill,
+                      {
+                        width: `${progress * 100}%`,
+                        backgroundColor: mod.color,
+                      },
+                    ]}
+                  />
+                </View>
                 <Text
-                  style={[styles.moduleDesc, { color: colors.textSecondary }]}
+                  style={[styles.progressText, { color: colors.textSecondary }]}
                 >
-                  {mod.description}
+                  {completed}/{total}
                 </Text>
               </View>
-            </View>
-            <View style={styles.progressRow}>
-              <View style={styles.progressBarBg}>
-                <View
-                  style={[
-                    styles.progressBarFill,
-                    { width: `${progress * 100}%`, backgroundColor: mod.color },
-                  ]}
-                />
-              </View>
-              <Text
-                style={[styles.progressText, { color: colors.textSecondary }]}
-              >
-                {completed}/{total}
-              </Text>
-            </View>
-          </Pressable>
-        );
-      })}
-    </ScrollView>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  scrollView: { flex: 1 },
   header: {
     paddingHorizontal: Spacing.four,
     marginBottom: Spacing.four,

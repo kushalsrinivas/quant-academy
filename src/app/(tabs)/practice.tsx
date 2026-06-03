@@ -58,75 +58,80 @@ export default function PracticeScreen() {
   const colors = Colors[scheme === "dark" ? "dark" : "light"];
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={{
-        paddingTop: insets.top + Spacing.four,
-        paddingBottom: 100,
-      }}
-    >
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>
-          Interview Prep
-        </Text>
-        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          Practice what HRT, Jane Street, and Citadel actually ask.
-        </Text>
-      </View>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={{
+          paddingTop: insets.top + Spacing.four,
+          paddingBottom: 100,
+        }}
+      >
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: colors.text }]}>
+            Interview Prep
+          </Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            Practice what HRT, Jane Street, and Citadel actually ask.
+          </Text>
+        </View>
 
-      {CATEGORIES.map((cat) => {
-        const problems = PROBLEMS.filter((p) => p.category === cat.id);
-        return (
-          <Pressable
-            key={cat.id}
-            style={({ pressed }) => [
-              styles.card,
-              {
-                backgroundColor: colors.backgroundElement,
-                opacity: pressed ? 0.8 : 1,
-              },
-            ]}
-            onPress={() => {
-              if (problems.length > 0) {
-                router.push(`/problem/${problems[0].id}` as never);
-              }
-            }}
-          >
-            <View
-              style={[
-                styles.cardIconWrap,
-                { backgroundColor: cat.iconColor + "18" },
+        {CATEGORIES.map((cat) => {
+          const problems = PROBLEMS.filter((p) => p.category === cat.id);
+          return (
+            <Pressable
+              key={cat.id}
+              style={({ pressed }) => [
+                styles.card,
+                {
+                  backgroundColor: colors.backgroundElement,
+                  opacity: pressed ? 0.8 : 1,
+                },
               ]}
+              onPress={() => {
+                if (problems.length > 0) {
+                  router.push(`/problem/${problems[0].id}` as never);
+                }
+              }}
             >
-              <Ionicons name={cat.iconName} size={22} color={cat.iconColor} />
-            </View>
-            <View style={styles.cardContent}>
-              <Text style={[styles.cardTitle, { color: colors.text }]}>
-                {cat.title}
-              </Text>
-              <Text style={[styles.cardDesc, { color: colors.textSecondary }]}>
-                {cat.description}
-              </Text>
-            </View>
-            <View
-              style={[
-                styles.countBadge,
-                { backgroundColor: colors.backgroundSelected },
-              ]}
-            >
-              <Text style={[styles.countText, { color: colors.text }]}>
-                {problems.length}
-              </Text>
-            </View>
-          </Pressable>
-        );
-      })}
-    </ScrollView>
+              <View
+                style={[
+                  styles.cardIconWrap,
+                  { backgroundColor: cat.iconColor + "18" },
+                ]}
+              >
+                <Ionicons name={cat.iconName} size={22} color={cat.iconColor} />
+              </View>
+              <View style={styles.cardContent}>
+                <Text style={[styles.cardTitle, { color: colors.text }]}>
+                  {cat.title}
+                </Text>
+                <Text
+                  style={[styles.cardDesc, { color: colors.textSecondary }]}
+                >
+                  {cat.description}
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.countBadge,
+                  { backgroundColor: colors.backgroundSelected },
+                ]}
+              >
+                <Text style={[styles.countText, { color: colors.text }]}>
+                  {problems.length}
+                </Text>
+              </View>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  scrollView: { flex: 1 },
   header: { paddingHorizontal: Spacing.four, marginBottom: Spacing.four },
   title: { fontSize: 28, fontWeight: "700" },
   subtitle: { fontSize: 14, marginTop: Spacing.one },
