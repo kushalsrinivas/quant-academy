@@ -1,7 +1,25 @@
 {
   "name": "learn-quant-trading",
+  "description": "Interactive Expo app for learning quantitative trading through lessons, simulations, and interview practice.",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "author": "Kushal Srinivas",
+  "homepage": "https://github.com/kushalsrinivas/quant-academy#readme",
+  "bugs": {
+    "url": "https://github.com/kushalsrinivas/quant-academy/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kushalsrinivas/quant-academy.git"
+  },
+  "keywords": [
+    "quant",
+    "trading",
+    "education",
+    "expo",
+    "react-native",
+    "finance"
+  ],
   "dependencies": {
     "@dawsonxiong/react-native-latex-renderer": "^2.0.0",
     "@expo/ui": "~56.0.15",
@@ -45,5 +63,5 @@
     "web": "expo start --web",
     "lint": "expo lint"
   },
-  "private": true
+  "license": "Apache-2.0"
 }

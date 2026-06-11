@@ -1,0 +1,36 @@
+name: Feature Request
+description: Suggest an improvement to Quant Academy.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for sharing an idea.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem are you trying to solve?
+      placeholder: I wish I could...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe your preferred solution.
+      placeholder: We can add...
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any alternate approaches you considered.
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Mockups, references, examples, or extra notes.
