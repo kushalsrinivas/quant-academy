@@ -200,7 +200,7 @@ export default function ExchangeScreen() {
         </View>
         {inventoryRisk && (
           <Text style={[styles.riskWarning, { color: colors.error }]}>
-            ⚠️ High inventory risk! Consider adjusting quotes.
+            Warning: High inventory risk. Consider adjusting quotes.
           </Text>
         )}
       </View>

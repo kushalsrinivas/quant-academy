@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -44,9 +45,11 @@ export default function ProfileScreen() {
     setCompletedMap(map);
   }, [db]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData]),
+  );
 
   const level = getLevelForXP(totalXP);
 
@@ -137,7 +140,11 @@ export default function ProfileScreen() {
                 },
               ]}
             >
-              <Text style={styles.achievementIcon}>{a.icon}</Text>
+              <Ionicons
+                name={a.icon as any}
+                size={24}
+                color={unlocked ? colors.accent : colors.textSecondary}
+              />
               <Text
                 style={[styles.achievementTitle, { color: colors.text }]}
                 numberOfLines={1}
@@ -173,7 +180,7 @@ export default function ProfileScreen() {
               { backgroundColor: colors.backgroundElement },
             ]}
           >
-            <Text style={styles.progressIcon}>{mod.icon}</Text>
+            <Ionicons name={mod.icon as any} size={18} color={mod.color} />
             <Text style={[styles.progressName, { color: colors.text }]}>
               {mod.title}
             </Text>
@@ -303,7 +310,6 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     alignItems: "center",
   },
-  achievementIcon: { fontSize: 28 },
   achievementTitle: {
     fontSize: 13,
     fontWeight: "600",
@@ -320,7 +326,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: Spacing.two,
   },
-  progressIcon: { fontSize: 20 },
   progressName: { flex: 1, fontSize: 14, fontWeight: "500" },
   progressCount: { fontSize: 13 },
   deleteButton: {

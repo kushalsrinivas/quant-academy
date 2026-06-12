@@ -97,9 +97,7 @@ export default function ResultsScreen() {
           ]}
         >
           <Text style={styles.resultBadgeText}>
-            {beatMarket
-              ? "🏆 Beats Buy & Hold!"
-              : "📉 Underperforms Buy & Hold"}
+            {beatMarket ? "Beats Buy & Hold" : "Underperforms Buy & Hold"}
           </Text>
         </View>
       </View>

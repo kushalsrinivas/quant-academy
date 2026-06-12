@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -39,9 +39,11 @@ export default function LearnScreen() {
     setCompletedMap(map);
   }, [db]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData]),
+  );
 
   const level = getLevelForXP(totalXP);
 
@@ -89,7 +91,14 @@ export default function LearnScreen() {
             onPress={() => router.push(`/lesson/${mod.id}` as never)}
           >
             <View style={styles.moduleHeader}>
-              <Text style={styles.moduleIcon}>{mod.icon}</Text>
+              <View
+                style={[
+                  styles.moduleIconWrap,
+                  { backgroundColor: mod.color + "18" },
+                ]}
+              >
+                <Ionicons name={mod.icon as any} size={22} color={mod.color} />
+              </View>
               <View style={styles.moduleInfo}>
                 <Text style={[styles.moduleName, { color: colors.text }]}>
                   {mod.title}
@@ -153,8 +162,18 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: Spacing.three,
   },
-  moduleHeader: { flexDirection: "row", gap: Spacing.three },
-  moduleIcon: { fontSize: 32 },
+  moduleHeader: {
+    flexDirection: "row",
+    gap: Spacing.three,
+    alignItems: "center",
+  },
+  moduleIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   moduleInfo: { flex: 1 },
   moduleName: { fontSize: 16, fontWeight: "600" },
   moduleDesc: { fontSize: 13, marginTop: 2 },

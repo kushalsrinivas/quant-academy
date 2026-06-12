@@ -303,7 +303,7 @@ function ChartPlaceholder({
       ]}
     >
       <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-        📊 {chartType} chart
+        {chartType} chart
       </Text>
     </View>
   );
@@ -324,7 +324,7 @@ function InteractivePlaceholder({
       ]}
     >
       <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-        🎮 Interactive: {widget}
+        Interactive: {widget}
       </Text>
     </View>
   );

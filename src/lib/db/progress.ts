@@ -1,5 +1,7 @@
 import type { SQLiteDatabase } from "expo-sqlite";
 
+import { getAllLessonCount } from "@/lib/content/loader";
+
 export interface ProgressRow {
   id: number;
   module_id: string;
@@ -43,7 +45,7 @@ export async function getModuleProgress(
     "SELECT COUNT(*) as count FROM user_progress WHERE module_id = ? AND completed = 1",
     moduleId,
   );
-  return { completed: row?.count ?? 0, total: 0 };
+  return { completed: row?.count ?? 0, total: getAllLessonCount(moduleId) };
 }
 
 export async function getCompletedLessons(

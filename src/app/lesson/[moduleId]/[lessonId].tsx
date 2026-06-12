@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -13,10 +14,15 @@ import {
 
 import { ContentBlock } from "@/components/lessons/ContentBlock";
 import { Colors, Spacing } from "@/constants/theme";
-import { getLesson } from "@/lib/content/loader";
+import { getLesson, getLessonsForModule } from "@/lib/content/loader";
+import { MODULES } from "@/lib/content/modules";
 import type { Lesson, QuizSection } from "@/lib/content/types";
 import { unlockAchievement } from "@/lib/db/achievements";
-import { isLessonComplete, markLessonComplete } from "@/lib/db/progress";
+import {
+  getCompletedLessons,
+  isLessonComplete,
+  markLessonComplete,
+} from "@/lib/db/progress";
 import { addXP, hasEarnedXPFor, XP_VALUES } from "@/lib/db/xp";
 
 export default function LessonScreen() {
@@ -51,6 +57,13 @@ export default function LessonScreen() {
     checkCompletion();
   }, [checkCompletion]);
 
+  const allLessons = useMemo(
+    () => getLessonsForModule(moduleId ?? ""),
+    [moduleId],
+  );
+  const currentIndex = allLessons.findIndex((l) => l.id === lessonId);
+  const nextLesson = currentIndex >= 0 ? allLessons[currentIndex + 1] : null;
+
   const markComplete = useCallback(async () => {
     if (!moduleId || !lessonId || !lesson) return;
     await markLessonComplete(db, moduleId, lessonId);
@@ -67,10 +80,40 @@ export default function LessonScreen() {
         `${moduleId}/${lessonId}`,
       );
     }
+
     await unlockAchievement(db, "first_lesson");
     if (moduleId === "markets-101" && lessonId === "01-what-are-stocks") {
       await unlockAchievement(db, "first_trade");
     }
+
+    const completedIds = await getCompletedLessons(db, moduleId);
+    const completedSet = new Set(completedIds);
+    completedSet.add(lessonId);
+    const moduleLessons = getLessonsForModule(moduleId);
+    const allDone = moduleLessons.every((l) => completedSet.has(l.id));
+
+    if (allDone) {
+      const moduleAchievementMap: Record<string, string> = {
+        probability: "prob_master",
+        statistics: "stat_wizard",
+        "market-microstructure": "microstructure",
+        "math-for-quants": "math_complete",
+        "interview-prep": "interview_ready",
+      };
+      const achId = moduleAchievementMap[moduleId];
+      if (achId) await unlockAchievement(db, achId);
+
+      const allModulesDone = await Promise.all(
+        MODULES.map(async (m) => {
+          const ids = await getCompletedLessons(db, m.id);
+          return getLessonsForModule(m.id).every((l) => ids.includes(l.id));
+        }),
+      );
+      if (allModulesDone.every(Boolean)) {
+        await unlockAchievement(db, "full_stack");
+      }
+    }
+
     setCompleted(true);
   }, [db, moduleId, lessonId, lesson]);
 
@@ -143,12 +186,31 @@ export default function LessonScreen() {
               <Text style={styles.completeBtnText}>Complete Lesson</Text>
             </Pressable>
           ) : (
-            <View style={styles.completedBadge}>
-              <Text style={styles.completedText}>✓ Completed</Text>
-            </View>
+            <>
+              <View style={styles.completedBadge}>
+                <Text style={styles.completedText}>✓ Completed</Text>
+              </View>
+              {nextLesson && (
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.nextLessonBtn,
+                    { opacity: pressed ? 0.8 : 1 },
+                  ]}
+                  onPress={() =>
+                    router.replace(
+                      `/lesson/${moduleId}/${nextLesson.id}` as never,
+                    )
+                  }
+                >
+                  <Text style={styles.nextLessonText}>
+                    Next: {nextLesson.title} →
+                  </Text>
+                </Pressable>
+              )}
+            </>
           )}
 
-          {hasQuiz && (
+          {hasQuiz && !completed && (
             <Pressable
               style={({ pressed }) => [
                 styles.quizBtn,
@@ -236,9 +298,19 @@ function CompletionQuiz({
 
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <Text style={styles.finishedIcon}>
-          {correctCount === total ? "🏆" : passed ? "👍" : "📖"}
-        </Text>
+        <Ionicons
+          name={
+            correctCount === total
+              ? "trophy"
+              : passed
+                ? "checkmark-circle"
+                : "book"
+          }
+          size={56}
+          color={
+            correctCount === total ? "#F59E0B" : passed ? "#10B981" : "#3B82F6"
+          }
+        />
         <Text style={[styles.finishedTitle, { color: colors.text }]}>
           {correctCount === total
             ? "Perfect Score!"
@@ -385,6 +457,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   completedText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+  nextLessonBtn: {
+    backgroundColor: "#3B82F6",
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  nextLessonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
   quizBtn: {
     paddingVertical: 14,
     borderRadius: 12,
@@ -444,7 +523,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   nextBtnText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  finishedIcon: { fontSize: 64 },
+  finishedIcon: { marginBottom: 8 },
   finishedTitle: { fontSize: 24, fontWeight: "700" },
   finishedScore: { fontSize: 16 },
   resultActions: { width: "100%", gap: Spacing.two, marginTop: Spacing.two },

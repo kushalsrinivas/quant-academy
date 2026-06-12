@@ -87,9 +87,7 @@ export default function PracticeScreen() {
               },
             ]}
             onPress={() => {
-              if (problems.length > 0) {
-                router.push(`/problem/${problems[0].id}` as never);
-              }
+              router.push(`/problems/${cat.id}` as never);
             }}
           >
             <View

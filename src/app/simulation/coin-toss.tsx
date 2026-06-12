@@ -1,5 +1,6 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
+  InteractionManager,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,6 +20,14 @@ export default function CoinTossScreen() {
   const [bias, setBias] = useState(0.5);
   const [lastFlip, setLastFlip] = useState<"H" | "T" | null>(null);
   const [history, setHistory] = useState<boolean[]>([]);
+  const [flipping, setFlipping] = useState(false);
+
+  const headsRef = useRef(heads);
+  const tailsRef = useRef(tails);
+  const historyRef = useRef(history);
+  headsRef.current = heads;
+  tailsRef.current = tails;
+  historyRef.current = history;
 
   const total = heads + tails;
   const headsRatio = total > 0 ? heads / total : 0;
@@ -26,27 +35,49 @@ export default function CoinTossScreen() {
 
   const flip = useCallback(
     (count: number) => {
-      let h = heads;
-      let t = tails;
-      const newHistory = [...history];
-      let last: "H" | "T" = "H";
-      for (let i = 0; i < count; i++) {
-        const isHeads = Math.random() < bias;
-        if (isHeads) {
-          h++;
-          last = "H";
-        } else {
-          t++;
-          last = "T";
+      if (count <= 1000) {
+        let h = headsRef.current;
+        let t = tailsRef.current;
+        const newHistory = [...historyRef.current];
+        let last: "H" | "T" = "H";
+        for (let i = 0; i < count; i++) {
+          const isHeads = Math.random() < bias;
+          if (isHeads) {
+            h++;
+            last = "H";
+          } else {
+            t++;
+            last = "T";
+          }
+          if (count <= 10) newHistory.push(isHeads);
         }
-        if (count <= 10) newHistory.push(isHeads);
+        setHeads(h);
+        setTails(t);
+        setLastFlip(last);
+        setHistory(newHistory.slice(-100));
+      } else {
+        setFlipping(true);
+        InteractionManager.runAfterInteractions(() => {
+          let h = headsRef.current;
+          let t = tailsRef.current;
+          let last: "H" | "T" = "H";
+          for (let i = 0; i < count; i++) {
+            if (Math.random() < bias) {
+              h++;
+              last = "H";
+            } else {
+              t++;
+              last = "T";
+            }
+          }
+          setHeads(h);
+          setTails(t);
+          setLastFlip(last);
+          setFlipping(false);
+        });
       }
-      setHeads(h);
-      setTails(t);
-      setLastFlip(last);
-      setHistory(newHistory.slice(-100));
     },
-    [heads, tails, bias, history],
+    [bias],
   );
 
   const reset = useCallback(() => {
@@ -103,10 +134,14 @@ export default function CoinTossScreen() {
           <Text style={styles.flipBtnText}>× 1K</Text>
         </Pressable>
         <Pressable
-          style={[styles.flipBtn, { backgroundColor: "#A855F7" }]}
+          style={[
+            styles.flipBtn,
+            { backgroundColor: "#A855F7", opacity: flipping ? 0.5 : 1 },
+          ]}
           onPress={() => flip(10000)}
+          disabled={flipping}
         >
-          <Text style={styles.flipBtnText}>× 10K</Text>
+          <Text style={styles.flipBtnText}>{flipping ? "..." : "× 10K"}</Text>
         </Pressable>
       </View>
 

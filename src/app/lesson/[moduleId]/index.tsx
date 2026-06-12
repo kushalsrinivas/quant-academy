@@ -1,6 +1,6 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -9,6 +9,8 @@ import {
   useColorScheme,
   View,
 } from "react-native";
+
+import { Ionicons } from "@expo/vector-icons";
 
 import { Colors, Spacing } from "@/constants/theme";
 import { getLessonsForModule } from "@/lib/content/loader";
@@ -33,9 +35,11 @@ export default function LessonListScreen() {
     setCompletedIds(ids);
   }, [db, moduleId]);
 
-  useEffect(() => {
-    loadProgress();
-  }, [loadProgress]);
+  useFocusEffect(
+    useCallback(() => {
+      loadProgress();
+    }, [loadProgress]),
+  );
 
   return (
     <ScrollView
@@ -43,7 +47,18 @@ export default function LessonListScreen() {
       contentContainerStyle={{ paddingBottom: 100 }}
     >
       <View style={styles.header}>
-        <Text style={styles.headerIcon}>{mod?.icon}</Text>
+        <View
+          style={[
+            styles.headerIconWrap,
+            { backgroundColor: (mod?.color ?? "#3B82F6") + "18" },
+          ]}
+        >
+          <Ionicons
+            name={(mod?.icon ?? "book-outline") as any}
+            size={28}
+            color={mod?.color ?? "#3B82F6"}
+          />
+        </View>
         <Text style={[styles.headerTitle, { color: colors.text }]}>
           {mod?.title ?? moduleId}
         </Text>
@@ -114,7 +129,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: Spacing.one,
   },
-  headerIcon: { fontSize: 48 },
+  headerIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   headerTitle: { fontSize: 24, fontWeight: "700", marginTop: Spacing.two },
   headerDesc: { fontSize: 14, textAlign: "center" },
   headerProgress: { fontSize: 13, marginTop: Spacing.two },

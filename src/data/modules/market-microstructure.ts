@@ -292,7 +292,7 @@ const lessons: Lesson[] = [
       {
         type: 'text',
         content:
-          'Types of dark pools:\n\n- Broker-dealer pools (e.g., Goldman Sachs\' Sigma-X): run by banks for their clients\n- Independent pools (e.g., IEX, Liquidnet): independent venues often focused on reducing information leakage\n- Exchange-operated pools: dark order types on public exchanges (hidden orders)\n\nThe key trade-off: dark pools reduce market impact but create execution uncertainty. Smart order routers balance between lit and dark venues to optimize overall execution quality.',
+          'Types of dark pools:\n\n- Broker-dealer pools (e.g., Goldman Sachs\' Sigma-X, Credit Suisse\'s CrossFinder): run by banks for their clients\n- Independent pools (e.g., Liquidnet): independent venues often focused on reducing information leakage for block trades\n- Exchange-operated pools: dark order types on public exchanges (hidden orders)\n\nNote: IEX is sometimes confused with a dark pool, but it is a fully lit registered national exchange with a public order book. Its "speed bump" (350μs delay) is a unique feature, but it operates transparently like NYSE or NASDAQ.\n\nThe key trade-off: dark pools reduce market impact but create execution uncertainty. Smart order routers balance between lit and dark venues to optimize overall execution quality.',
       },
       {
         type: 'quiz',

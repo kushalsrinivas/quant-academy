@@ -13,8 +13,10 @@ import {
 } from "react-native";
 
 import { Colors, Spacing } from "@/constants/theme";
+import { NIFTY50_DAILY } from "@/data/datasets/nifty50-daily";
+import { unlockAchievement } from "@/lib/db/achievements";
 import { saveStrategy } from "@/lib/db/strategies";
-import { addXP, XP_VALUES } from "@/lib/db/xp";
+import { addXP, hasEarnedXPFor, XP_VALUES } from "@/lib/db/xp";
 import {
   setLastResult,
   type SharedBacktestResult,
@@ -30,39 +32,6 @@ interface Condition {
 const INDICATORS = ["price", "sma", "ema", "rsi", "momentum"];
 const OPERATORS = [">", "<", ">=", "<=", "crosses_above", "crosses_below"];
 
-function generateBars(n: number) {
-  const bars: {
-    date: string;
-    open: number;
-    high: number;
-    low: number;
-    close: number;
-    volume: number;
-  }[] = [];
-  let price = 100;
-  const d = new Date("2022-01-03");
-  for (let i = 0; i < n; i++) {
-    const ret = (Math.random() - 0.498) * 0.03;
-    const open = price;
-    const close = open * (1 + ret);
-    const high = Math.max(open, close) * (1 + Math.random() * 0.01);
-    const low = Math.min(open, close) * (1 - Math.random() * 0.01);
-    bars.push({
-      date: d.toISOString().split("T")[0],
-      open: Math.round(open * 100) / 100,
-      high: Math.round(high * 100) / 100,
-      low: Math.round(low * 100) / 100,
-      close: Math.round(close * 100) / 100,
-      volume: Math.round(1e6 + Math.random() * 5e6),
-    });
-    price = close;
-    d.setDate(d.getDate() + 1);
-    if (d.getDay() === 0) d.setDate(d.getDate() + 1);
-    if (d.getDay() === 6) d.setDate(d.getDate() + 2);
-  }
-  return bars;
-}
-
 function calcSMA(data: number[], period: number): (number | null)[] {
   return data.map((_, i) => {
     if (i < period - 1) return null;
@@ -70,6 +39,26 @@ function calcSMA(data: number[], period: number): (number | null)[] {
     for (let j = i - period + 1; j <= i; j++) s += data[j];
     return s / period;
   });
+}
+
+function calcEMA(data: number[], period: number): (number | null)[] {
+  const result: (number | null)[] = [];
+  const k = 2 / (period + 1);
+  let emaVal: number | null = null;
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) {
+      result.push(null);
+    } else if (emaVal === null) {
+      let s = 0;
+      for (let j = i - period + 1; j <= i; j++) s += data[j];
+      emaVal = s / period;
+      result.push(emaVal);
+    } else {
+      emaVal = data[i] * k + emaVal * (1 - k);
+      result.push(emaVal);
+    }
+  }
+  return result;
 }
 
 function calcRSI(data: number[], period: number): (number | null)[] {
@@ -104,7 +93,7 @@ function getIndicator(
     case "sma":
       return calcSMA(closes, period);
     case "ema":
-      return calcSMA(closes, period); // simplified
+      return calcEMA(closes, period);
     case "rsi":
       return calcRSI(closes, period);
     case "momentum":
@@ -169,7 +158,7 @@ export default function StrategyBuilderScreen() {
     setRunning(true);
 
     try {
-      const bars = generateBars(500);
+      const bars = NIFTY50_DAILY.slice(0, 500);
       const closes = bars.map((b) => b.close);
       const initCap = parseFloat(capital) || 100000;
       const position = (parseFloat(posSize) || 100) / 100;
@@ -335,7 +324,22 @@ export default function StrategyBuilderScreen() {
       };
 
       setLastResult(result);
-      await addXP(db, XP_VALUES.backtest, "backtest", name);
+      const alreadyEarned = await hasEarnedXPFor(db, "backtest", name);
+      if (!alreadyEarned) {
+        await addXP(db, XP_VALUES.backtest, "backtest", name);
+      }
+
+      if (result.totalReturn > result.buyHoldReturn) {
+        await unlockAchievement(db, "beat_market");
+        const beatEarned = await hasEarnedXPFor(db, "beat_market", name);
+        if (!beatEarned) {
+          await addXP(db, XP_VALUES.beat_market, "beat_market", name);
+        }
+      }
+      if (result.sharpeRatio > 1.5) {
+        await unlockAchievement(db, "sharp_thinker");
+      }
+
       router.push("/strategy/results" as never);
     } finally {
       setRunning(false);
@@ -635,7 +639,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(128,128,128,0.15)",
   },
   miniBtnActive: { backgroundColor: "#3B82F6" },
-  miniBtnText: { fontSize: 10, fontWeight: "600", color: "#888" },
+  miniBtnText: { fontSize: 10, fontWeight: "600", color: "#9CA3AF" },
   miniBtnTextActive: { color: "#fff" },
   paramInput: { gap: 4 },
   smallInput: {

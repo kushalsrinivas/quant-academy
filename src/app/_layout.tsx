@@ -73,6 +73,10 @@ export default function RootLayout() {
               options={{ headerShown: true, title: "Backtest Results" }}
             />
             <Stack.Screen
+              name="problems/[category]"
+              options={{ headerShown: true, title: "Problems" }}
+            />
+            <Stack.Screen
               name="problem/[id]"
               options={{ headerShown: true, title: "Problem" }}
             />

@@ -57,9 +57,9 @@ const lessons: Lesson[] = [
       {
         type: 'code',
         language: 'python',
-        code: 'import numpy as np\n\n# Compare two strategies with same EV but different variance\nnp.random.seed(42)\nstrategy_a = np.random.normal(loc=0.10, scale=0.05, size=252)  # low vol\nstrategy_b = np.random.normal(loc=0.10, scale=0.30, size=252)  # high vol\n\nfor name, returns in [("Strategy A (low vol)", strategy_a), ("Strategy B (high vol)", strategy_b)]:\n    print(f"{name}:")\n    print(f"  Mean daily return: {returns.mean():.4f}")\n    print(f"  Std deviation:     {returns.std():.4f}")\n    print(f"  Min daily return:  {returns.min():.4f}")\n    print(f"  Max daily return:  {returns.max():.4f}")\n    print()',
+        code: 'import numpy as np\n\n# Compare two strategies with same EV but different variance\n# Daily params: ~10% annual return / 252 days ≈ 0.0004 daily mean\nnp.random.seed(42)\nstrategy_a = np.random.normal(loc=0.0004, scale=0.015, size=252)  # low vol (~24% annual)\nstrategy_b = np.random.normal(loc=0.0004, scale=0.045, size=252)  # high vol (~71% annual)\n\nfor name, returns in [("Strategy A (low vol)", strategy_a), ("Strategy B (high vol)", strategy_b)]:\n    print(f"{name}:")\n    print(f"  Mean daily return: {returns.mean():.6f}")\n    print(f"  Std deviation:     {returns.std():.6f}")\n    print(f"  Annualized return: {returns.mean() * 252:.2%}")\n    print(f"  Annualized vol:    {returns.std() * np.sqrt(252):.2%}")\n    print(f"  Min daily return:  {returns.min():.4f}")\n    print(f"  Max daily return:  {returns.max():.4f}")\n    print()',
         output:
-          'Strategy A (low vol):\n  Mean daily return: 0.1004\n  Std deviation:     0.0494\n  Min daily return:  -0.0193\n  Max daily return:  0.2312\n\nStrategy B (high vol):\n  Mean daily return: 0.1006\n  Std deviation:     0.2980\n  Min daily return:  -0.6568\n  Max daily return:  0.8539',
+          'Strategy A (low vol):\n  Mean daily return: 0.000512\n  Std deviation:     0.014826\n  Annualized return: 12.91%\n  Annualized vol:    23.53%\n  Min daily return:  -0.0380\n  Max daily return:  0.0437\n\nStrategy B (high vol):\n  Mean daily return: 0.000510\n  Std deviation:     0.044754\n  Annualized return: 12.85%\n  Annualized vol:    71.04%\n  Min daily return:  -0.1351\n  Max daily return:  0.1282',
       },
       {
         type: 'quiz',

@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import {
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -64,7 +65,24 @@ export default function OrderBookScreen() {
 
   const placeBuy = useCallback(() => {
     const qty = parseInt(qtyInput, 10) || 0;
-    if (qty <= 0) return;
+    if (qty <= 0) {
+      Alert.alert("Invalid Order", "Quantity must be greater than 0");
+      return;
+    }
+    if (orderType === "limit") {
+      const price = parseFloat(priceInput) || 0;
+      if (price <= 0) {
+        Alert.alert("Invalid Order", "Price must be greater than 0");
+        return;
+      }
+    }
+    if (orderType === "market" && asks.length === 0) {
+      Alert.alert(
+        "No Liquidity",
+        "No asks available to fill your market buy order",
+      );
+      return;
+    }
 
     if (orderType === "market") {
       let remaining = qty;
@@ -118,7 +136,24 @@ export default function OrderBookScreen() {
 
   const placeSell = useCallback(() => {
     const qty = parseInt(qtyInput, 10) || 0;
-    if (qty <= 0) return;
+    if (qty <= 0) {
+      Alert.alert("Invalid Order", "Quantity must be greater than 0");
+      return;
+    }
+    if (orderType === "limit") {
+      const price = parseFloat(priceInput) || 0;
+      if (price <= 0) {
+        Alert.alert("Invalid Order", "Price must be greater than 0");
+        return;
+      }
+    }
+    if (orderType === "market" && bids.length === 0) {
+      Alert.alert(
+        "No Liquidity",
+        "No bids available to fill your market sell order",
+      );
+      return;
+    }
 
     if (orderType === "market") {
       let remaining = qty;
@@ -493,7 +528,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(128,128,128,0.15)",
   },
   typeBtnActive: { backgroundColor: "#3B82F6" },
-  typeBtnText: { fontSize: 12, fontWeight: "600", color: "#888" },
+  typeBtnText: { fontSize: 12, fontWeight: "600", color: "#9CA3AF" },
   typeBtnTextActive: { color: "#fff" },
   inputRow: { flexDirection: "row", alignItems: "center", gap: Spacing.two },
   inputLabel: { fontSize: 13, width: 60 },

@@ -10,7 +10,7 @@ import {
 
 import { Colors, Spacing } from "@/constants/theme";
 
-const STOCKS = ["RELIANCE", "TCS", "INFY", "HDFC", "ITC"];
+const STOCKS = ["RELIANCE", "TCS", "INFY", "HDFCBANK", "ITC"];
 
 function generateReturns(seed: number, n: number = 250): number[] {
   let s = seed;
@@ -25,7 +25,7 @@ const STOCK_RETURNS: Record<string, number[]> = {
   RELIANCE: generateReturns(42),
   TCS: generateReturns(73),
   INFY: generateReturns(101),
-  HDFC: generateReturns(59),
+  HDFCBANK: generateReturns(59),
   ITC: generateReturns(88),
 };
 

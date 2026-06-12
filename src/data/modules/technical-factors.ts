@@ -276,7 +276,7 @@ const lessons: Lesson[] = [
       {
         type: "code",
         language: "python",
-        code: "import numpy as np\n\nlookback = 20\nvol_adj_momentum = np.zeros(n_stocks)\nfor s in range(n_stocks):\n    recent_ret = returns[-lookback:, s]\n    recent_vol = volume[-lookback:, s]\n    vol_weights = recent_vol / np.sum(recent_vol)\n    vol_adj_momentum[s] = np.sum(vol_weights * recent_ret)\n\n# Z-score normalize\nfactor_z = (vol_adj_momentum - np.mean(vol_adj_momentum)) / np.std(vol_adj_momentum)\nprint('Top 5 z-scores:', factor_z[np.argsort(factor_z)[-5:]])",
+        code: "import numpy as np\n\nnp.random.seed(42)\nn_stocks = 50\nn_days = 252\n\n# Simulated daily returns and volume\nreturns = np.random.normal(0.0005, 0.02, (n_days, n_stocks))\nvolume = np.random.uniform(1e6, 5e6, (n_days, n_stocks))\n\nlookback = 20\nvol_adj_momentum = np.zeros(n_stocks)\nfor s in range(n_stocks):\n    recent_ret = returns[-lookback:, s]\n    recent_vol = volume[-lookback:, s]\n    vol_weights = recent_vol / np.sum(recent_vol)\n    vol_adj_momentum[s] = np.sum(vol_weights * recent_ret)\n\n# Z-score normalize\nfactor_z = (vol_adj_momentum - np.mean(vol_adj_momentum)) / np.std(vol_adj_momentum)\nprint('Top 5 z-scores:', np.round(factor_z[np.argsort(factor_z)[-5:]], 2))",
         output:
           "Volume-Adjusted Momentum Factor (z-scored):\n\nTop 5 stocks: ['Stock_23', 'Stock_41', 'Stock_7', 'Stock_34', 'Stock_12']\n  Z-scores: ['+2.31', '+2.18', '+1.89', '+1.64', '+1.52']\n\nBottom 5 stocks: ['Stock_38', 'Stock_15', 'Stock_44', 'Stock_2', 'Stock_29']\n  Z-scores: ['-2.47', '-2.11', '-1.93', '-1.76', '-1.58']",
       },

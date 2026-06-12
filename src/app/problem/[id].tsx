@@ -79,12 +79,20 @@ export default function ProblemScreen() {
               { backgroundColor: colors.backgroundElement },
             ]}
             onPress={() => {
-              setShowHints(true);
-              if (hintIdx < problem.hints.length - 1) setHintIdx((i) => i + 1);
+              if (!showHints) {
+                setShowHints(true);
+              } else if (hintIdx < problem.hints.length - 1) {
+                setHintIdx((i) => i + 1);
+              }
             }}
+            disabled={showHints && hintIdx >= problem.hints.length - 1}
           >
             <Text style={[styles.hintBtnText, { color: colors.text }]}>
-              {showHints ? "Next Hint" : "Show Hint"}
+              {!showHints
+                ? "Show Hint"
+                : hintIdx < problem.hints.length - 1
+                  ? "Next Hint"
+                  : "All Hints Shown"}
             </Text>
           </Pressable>
           {showHints &&

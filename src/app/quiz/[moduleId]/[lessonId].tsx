@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useMemo, useState } from "react";
@@ -13,6 +14,7 @@ import {
 import { Colors, Spacing } from "@/constants/theme";
 import { getLesson } from "@/lib/content/loader";
 import type { QuizSection } from "@/lib/content/types";
+import { unlockAchievement } from "@/lib/db/achievements";
 import { addXP, hasEarnedXPFor, XP_VALUES } from "@/lib/db/xp";
 
 export default function QuizScreen() {
@@ -60,33 +62,41 @@ export default function QuizScreen() {
       setShowResult(false);
     } else {
       setFinished(true);
-      const score = correctCount + (selected === current?.correct ? 1 : 0);
       const sourceId = `${moduleId}/${lessonId}`;
       const alreadyEarned = await hasEarnedXPFor(db, "quiz", sourceId);
       if (!alreadyEarned) {
         const total = questions.length;
-        const xp =
-          score === total
-            ? XP_VALUES.quiz_perfect
-            : Math.round(
-                XP_VALUES.quiz_partial_min +
-                  ((XP_VALUES.quiz_partial_max - XP_VALUES.quiz_partial_min) *
-                    score) /
-                    total,
-              );
+        const isPerfect = correctCount === total;
+        const xp = isPerfect
+          ? XP_VALUES.quiz_perfect
+          : Math.round(
+              XP_VALUES.quiz_partial_min +
+                ((XP_VALUES.quiz_partial_max - XP_VALUES.quiz_partial_min) *
+                  correctCount) /
+                  total,
+            );
         await addXP(db, xp, "quiz", sourceId);
+
+        await db.runAsync(
+          "INSERT INTO quiz_results (module_id, lesson_id, score, total) VALUES (?, ?, ?, ?)",
+          moduleId ?? "",
+          lessonId ?? "",
+          correctCount,
+          total,
+        );
+
+        if (isPerfect) {
+          const perfectCount = await db.getFirstAsync<{ count: number }>(
+            "SELECT COUNT(DISTINCT source_id) as count FROM xp_log WHERE source = 'quiz' AND amount = ?",
+            XP_VALUES.quiz_perfect,
+          );
+          if ((perfectCount?.count ?? 0) >= 10) {
+            await unlockAchievement(db, "quiz_ace");
+          }
+        }
       }
     }
-  }, [
-    currentIdx,
-    questions.length,
-    correctCount,
-    selected,
-    current,
-    moduleId,
-    lessonId,
-    db,
-  ]);
+  }, [currentIdx, questions.length, correctCount, moduleId, lessonId, db]);
 
   if (questions.length === 0) {
     return (
@@ -103,9 +113,23 @@ export default function QuizScreen() {
     const total = questions.length;
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <Text style={styles.finishedIcon}>
-          {finalScore === total ? "🏆" : finalScore >= total / 2 ? "👍" : "📖"}
-        </Text>
+        <Ionicons
+          name={
+            finalScore === total
+              ? "trophy"
+              : finalScore >= total / 2
+                ? "checkmark-circle"
+                : "book"
+          }
+          size={56}
+          color={
+            finalScore === total
+              ? "#F59E0B"
+              : finalScore >= total / 2
+                ? "#10B981"
+                : "#3B82F6"
+          }
+        />
         <Text style={[styles.finishedTitle, { color: colors.text }]}>
           {finalScore === total ? "Perfect Score!" : "Quiz Complete"}
         </Text>
@@ -239,7 +263,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   nextBtnText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  finishedIcon: { fontSize: 64 },
+  finishedIcon: { marginBottom: 8 },
   finishedTitle: { fontSize: 24, fontWeight: "700" },
   finishedScore: { fontSize: 16 },
   doneBtn: {
