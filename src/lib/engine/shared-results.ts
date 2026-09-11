@@ -1,3 +1,22 @@
+export interface StoredBacktestConfig {
+  buyConditions: Array<{
+    indicator: string;
+    period: string;
+    operator: string;
+    value: string;
+  }>;
+  sellConditions: Array<{
+    indicator: string;
+    period: string;
+    operator: string;
+    value: string;
+  }>;
+  initialCapital: number;
+  positionSizePct: number;
+  slippageBps: number;
+  commission: number;
+}
+
 export interface SharedBacktestResult {
   totalReturn: number;
   annualizedReturn: number;
@@ -5,7 +24,7 @@ export interface SharedBacktestResult {
   maxDrawdown: number;
   winRate: number;
   totalTrades: number;
-  profitFactor: number;
+  profitFactor: number | null;
   buyHoldReturn: number;
   trades: Array<{
     entryDate: string;
@@ -18,6 +37,7 @@ export interface SharedBacktestResult {
   }>;
   equityCurve: Array<{ date: string; value: number }>;
   strategyName: string;
+  symbol: string;
 }
 
 let _lastResult: SharedBacktestResult | null = null;

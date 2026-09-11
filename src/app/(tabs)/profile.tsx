@@ -1,24 +1,39 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 import { useSQLiteContext } from "expo-sqlite";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   Alert,
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   useColorScheme,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import ViewShot from "react-native-view-shot";
 
 import { Colors, Spacing } from "@/constants/theme";
+import { CertificateCard } from "@/components/share/ShareCards";
 import { MODULES } from "@/lib/content/modules";
 import {
   ACHIEVEMENT_DEFS,
   getUnlockedAchievements,
 } from "@/lib/db/achievements";
 import { getAllProgress } from "@/lib/db/progress";
+import { getTodayActivity, type DayActivity } from "@/lib/db/streaks";
+import { DISCORD_INVITE_URL } from "@/lib/challenge/weekly";
+import { getLocale, setLocale, type MarketLocale } from "@/lib/market/locale";
+import { captureAndShare } from "@/lib/share/capture";
+import {
+  cancelScheduledReminders,
+  disableReminders,
+  enableReminders,
+  isReminderEnabled,
+} from "@/lib/notifications";
 import { getLevelForXP, getTotalXP, LEVELS } from "@/lib/db/xp";
 
 export default function ProfileScreen() {
@@ -30,6 +45,12 @@ export default function ProfileScreen() {
   const [totalXP, setTotalXP] = useState(0);
   const [unlockedIds, setUnlockedIds] = useState<string[]>([]);
   const [completedMap, setCompletedMap] = useState<Record<string, number>>({});
+  const [totalCompleted, setTotalCompleted] = useState(0);
+  const [activity, setActivity] = useState<DayActivity | null>(null);
+  const [notifEnabled, setNotifEnabled] = useState(false);
+  const [locale, setLocaleState] = useState<MarketLocale>("IN");
+  const [sharing, setSharing] = useState(false);
+  const certRef = useRef<any>(null);
 
   const loadData = useCallback(async () => {
     const xp = await getTotalXP(db);
@@ -42,13 +63,63 @@ export default function ProfileScreen() {
       map[p.module_id] = (map[p.module_id] ?? 0) + 1;
     }
     setCompletedMap(map);
+    setTotalCompleted(progress.length);
+    setActivity(await getTodayActivity(db));
+    setNotifEnabled(await isReminderEnabled(db));
+    setLocaleState(await getLocale(db));
   }, [db]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  const handleNotifToggle = useCallback(
+    async (value: boolean) => {
+      if (value) {
+        const granted = await enableReminders(db);
+        setNotifEnabled(granted);
+        if (!granted) {
+          Alert.alert(
+            "Notifications off",
+            "Enable them in Settings to get reminders.",
+          );
+        }
+      } else {
+        await disableReminders(db);
+        setNotifEnabled(false);
+      }
+    },
+    [db],
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData]),
+  );
 
   const level = getLevelForXP(totalXP);
+
+  const handleLocaleChange = useCallback(
+    async (next: MarketLocale) => {
+      setLocaleState(next);
+      await setLocale(db, next);
+    },
+    [db],
+  );
+
+  const handleShareCertificate = useCallback(async () => {
+    if (sharing) return;
+    setSharing(true);
+    const ok = await captureAndShare(certRef, "Share certificate");
+    setSharing(false);
+    if (!ok) {
+      Alert.alert("Share unavailable", "Sharing is not available on this device.");
+    }
+  }, [sharing]);
+
+  const handleDiscord = useCallback(async () => {
+    await db.runAsync(
+      "INSERT OR REPLACE INTO settings (key, value) VALUES ('discord_joined', '1')",
+    );
+    await WebBrowser.openBrowserAsync(DISCORD_INVITE_URL);
+  }, [db]);
 
   return (
     <ScrollView
@@ -76,6 +147,53 @@ export default function ProfileScreen() {
             {level.xpForNext} XP to {level.nextLevel.title}
           </Text>
         )}
+      </View>
+
+      {/* Streak Stats */}
+      <View style={styles.streakRow}>
+        <View
+          style={[styles.streakCard, { backgroundColor: colors.backgroundElement }]}
+        >
+          <Ionicons name="flame" size={24} color="#F59E0B" />
+          <Text style={[styles.streakCardValue, { color: colors.text }]}>
+            {activity?.streak ?? 0}
+          </Text>
+          <Text
+            style={[styles.streakCardLabel, { color: colors.textSecondary }]}
+          >
+            Day streak
+          </Text>
+        </View>
+        <View
+          style={[styles.streakCard, { backgroundColor: colors.backgroundElement }]}
+        >
+          <Ionicons name="medal" size={24} color="#8B5CF6" />
+          <Text style={[styles.streakCardValue, { color: colors.text }]}>
+            {activity?.bestStreak ?? 0}
+          </Text>
+          <Text
+            style={[styles.streakCardLabel, { color: colors.textSecondary }]}
+          >
+            Best streak
+          </Text>
+        </View>
+        <View
+          style={[styles.streakCard, { backgroundColor: colors.backgroundElement }]}
+        >
+          <Ionicons
+            name={activity?.goalMet ? "checkmark-circle" : "checkmark-circle-outline"}
+            size={24}
+            color={activity?.goalMet ? "#10B981" : colors.textSecondary}
+          />
+          <Text style={[styles.streakCardValue, { color: colors.text }]}>
+            {activity?.lessonsToday ?? 0}/{activity?.goal ?? 1}
+          </Text>
+          <Text
+            style={[styles.streakCardLabel, { color: colors.textSecondary }]}
+          >
+            Today&apos;s goal
+          </Text>
+        </View>
       </View>
 
       {/* Level Roadmap */}
@@ -137,7 +255,7 @@ export default function ProfileScreen() {
                 },
               ]}
             >
-              <Text style={styles.achievementIcon}>{a.icon}</Text>
+              <Ionicons name={a.icon} size={28} color={colors.text} />
               <Text
                 style={[styles.achievementTitle, { color: colors.text }]}
                 numberOfLines={1}
@@ -173,7 +291,7 @@ export default function ProfileScreen() {
               { backgroundColor: colors.backgroundElement },
             ]}
           >
-            <Text style={styles.progressIcon}>{mod.icon}</Text>
+            <Ionicons name={mod.icon} size={20} color={mod.color} />
             <Text style={[styles.progressName, { color: colors.text }]}>
               {mod.title}
             </Text>
@@ -185,6 +303,107 @@ export default function ProfileScreen() {
           </View>
         );
       })}
+
+      {/* Notifications */}
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>
+        Market Region
+      </Text>
+      <View style={[styles.notifRow, { backgroundColor: colors.backgroundElement }]}>
+        <Ionicons name="globe-outline" size={20} color="#3B82F6" />
+        <View style={styles.notifContent}>
+          <Text style={[styles.notifTitle, { color: colors.text }]}>
+            {locale === "IN" ? "India · NSE · ₹" : "US · NYSE · $"}
+          </Text>
+          <Text style={[styles.notifDesc, { color: colors.textSecondary }]}>
+            {locale === "IN"
+              ? "NIFTY 50 data · 9:15 AM – 3:30 PM IST · SEBI"
+              : "US data · 9:30 AM – 4:00 PM ET · SEC"}
+          </Text>
+        </View>
+      </View>
+      <View style={styles.localeRow}>
+        {(["IN", "US"] as MarketLocale[]).map((l) => (
+          <Pressable
+            key={l}
+            style={[
+              styles.localeBtn,
+              { backgroundColor: locale === l ? "#3B82F6" : colors.backgroundElement },
+            ]}
+            onPress={() => handleLocaleChange(l)}
+          >
+            <Text style={[styles.localeText, { color: locale === l ? "#fff" : colors.text }]}>
+              {l === "IN" ? "🇮🇳 India" : "🇺🇸 US"}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>
+        Certificates & Community
+      </Text>
+      <View style={[styles.certCard, { backgroundColor: colors.backgroundElement }]}>
+        <Ionicons name="medal" size={24} color="#F59E0B" />
+        <View style={styles.notifContent}>
+          <Text style={[styles.notifTitle, { color: colors.text }]}>
+            {totalCompleted}/100 lessons · {level.title}
+          </Text>
+          <Text style={[styles.notifDesc, { color: colors.textSecondary }]}>
+            Share your progress certificate
+          </Text>
+        </View>
+      </View>
+      <View style={styles.localeRow}>
+        <Pressable
+          style={[styles.localeBtn, { backgroundColor: "#10B981", flex: 1 }]}
+          onPress={handleShareCertificate}
+        >
+          <Text style={[styles.localeText, { color: "#fff" }]}>
+            {sharing ? "Preparing…" : "Share Certificate"}
+          </Text>
+        </Pressable>
+        <Pressable
+          style={[styles.localeBtn, { backgroundColor: "#5865F2", flex: 1 }]}
+          onPress={handleDiscord}
+        >
+          <Text style={[styles.localeText, { color: "#fff" }]}>Join Discord</Text>
+        </Pressable>
+      </View>
+      <View style={styles.offscreen} pointerEvents="none">
+        <ViewShot ref={certRef} options={{ format: "png", quality: 1 }}>
+          <CertificateCard
+            title={totalCompleted >= 100 ? "Quant Academy Graduate" : `${totalCompleted} Lessons Complete`}
+            subtitle={`Level ${level.level} · ${level.title} · ${totalXP} XP`}
+            level={level.title}
+            date={new Date().toISOString().slice(0, 10)}
+          />
+        </ViewShot>
+      </View>
+
+      {/* Notifications */}
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>
+        Notifications
+      </Text>
+      <View
+        style={[
+          styles.notifRow,
+          { backgroundColor: colors.backgroundElement },
+        ]}
+      >
+        <Ionicons name="notifications-outline" size={20} color="#F59E0B" />
+        <View style={styles.notifContent}>
+          <Text style={[styles.notifTitle, { color: colors.text }]}>
+            Daily reminder
+          </Text>
+          <Text style={[styles.notifDesc, { color: colors.textSecondary }]}>
+            One evening nudge to protect your streak
+          </Text>
+        </View>
+        <Switch
+          value={notifEnabled}
+          onValueChange={handleNotifToggle}
+          trackColor={{ false: colors.backgroundSelected, true: "#3B82F6" }}
+        />
+      </View>
 
       {/* Data Management */}
       <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -211,8 +430,13 @@ export default function ProfileScreen() {
                     DELETE FROM quiz_results;
                     DELETE FROM achievements;
                     DELETE FROM strategies;
+                    DELETE FROM activity_days;
+                    DELETE FROM backtest_runs;
+                    DELETE FROM problem_attempts;
+                    DELETE FROM weekly_attempts;
                     DELETE FROM settings;
                   `);
+                  await cancelScheduledReminders();
                   loadData();
                   Alert.alert(
                     "Data Deleted",
@@ -270,6 +494,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: Spacing.one,
   },
+  streakRow: {
+    flexDirection: "row",
+    paddingHorizontal: Spacing.four,
+    gap: Spacing.two,
+    marginBottom: Spacing.one,
+  },
+  streakCard: {
+    flex: 1,
+    borderRadius: 16,
+    padding: Spacing.three,
+    alignItems: "center",
+  },
+  streakCardValue: { fontSize: 20, fontWeight: "700", marginTop: 4 },
+  streakCardLabel: { fontSize: 11, marginTop: 2 },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
@@ -303,7 +541,6 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     alignItems: "center",
   },
-  achievementIcon: { fontSize: 28 },
   achievementTitle: {
     fontSize: 13,
     fontWeight: "600",
@@ -320,9 +557,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: Spacing.two,
   },
-  progressIcon: { fontSize: 20 },
   progressName: { flex: 1, fontSize: 14, fontWeight: "500" },
   progressCount: { fontSize: 13 },
+  notifRow: {
+    marginHorizontal: Spacing.four,
+    marginBottom: Spacing.two,
+    borderRadius: 12,
+    padding: Spacing.three,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.three,
+  },
+  notifContent: { flex: 1 },
+  notifTitle: { fontSize: 15, fontWeight: "600" },
+  notifDesc: { fontSize: 12, marginTop: 2 },
   deleteButton: {
     marginHorizontal: Spacing.four,
     marginBottom: Spacing.four,
@@ -338,4 +586,27 @@ const styles = StyleSheet.create({
   deleteContent: { flex: 1 },
   deleteTitle: { fontSize: 15, fontWeight: "600", color: "#EF4444" },
   deleteDesc: { fontSize: 12, color: "#EF4444", opacity: 0.7, marginTop: 2 },
+  localeRow: {
+    flexDirection: "row",
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.four,
+    marginBottom: Spacing.two,
+  },
+  localeBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  localeText: { fontSize: 14, fontWeight: "700" },
+  certCard: {
+    marginHorizontal: Spacing.four,
+    marginBottom: Spacing.two,
+    borderRadius: 12,
+    padding: Spacing.three,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.three,
+  },
+  offscreen: { position: "absolute", left: -1000, top: 0, opacity: 0 },
 });

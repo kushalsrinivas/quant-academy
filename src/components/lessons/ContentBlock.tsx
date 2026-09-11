@@ -1,8 +1,16 @@
 import { MathView } from "@dawsonxiong/react-native-latex-renderer/lib/module/MathView";
-import { useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useState, type ReactNode } from "react";
+import { Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import type { LessonSection } from "@/lib/content/types";
+import {
+  SkiaBarChart,
+  SkiaCandlesticks,
+  SkiaHistogram,
+  SkiaLineChart,
+  SkiaScatter,
+} from "@/components/charts/SkiaCharts";
 
 type ThemeColors = {
   text: string;
@@ -46,7 +54,7 @@ export function ContentBlock({ section, colors }: Props) {
         />
       );
     case "chart":
-      return <ChartPlaceholder chartType={section.chartType} colors={colors} />;
+      return <ChartBlock chartType={section.chartType} data={section.data} colors={colors} />;
     case "interactive":
       return <InteractivePlaceholder widget={section.widget} colors={colors} />;
     default:
@@ -280,10 +288,119 @@ function InlineQuiz({
       </View>
       {answered && (
         <Text style={[styles.quizExplanation, { color: colors.textSecondary }]}>
-          {selected === correct ? "✓ Correct! " : "✗ Incorrect. "}
+          <Ionicons
+            name={selected === correct ? "checkmark-circle" : "close-circle"}
+            size={14}
+            color={selected === correct ? "#10B981" : "#EF4444"}
+          />{" "}
+          {selected === correct ? "Correct! " : "Incorrect. "}
           {explanation}
         </Text>
       )}
+    </View>
+  );
+}
+
+function ChartBlock({
+  chartType,
+  data,
+  colors,
+}: {
+  chartType: string;
+  data: unknown;
+  colors: ThemeColors;
+}) {
+  const { width } = useWindowDimensions();
+  const chartWidth = Math.min(width - 48, 700);
+  const asArray = Array.isArray(data) ? (data as unknown[]) : [];
+  const toNumbers = (): number[] =>
+    asArray
+      .map((d) =>
+        typeof d === "number"
+          ? d
+          : typeof (d as { value?: unknown }).value === "number"
+            ? ((d as { value: number }).value)
+            : null,
+      )
+      .filter((v): v is number => v !== null);
+
+  let chart: ReactNode = null;
+  if (chartType === "line") {
+    chart = <SkiaLineChart data={toNumbers()} width={chartWidth} height={180} colors={colors} />;
+  } else if (chartType === "bar") {
+    const bars = asArray.map((d, i) =>
+      typeof d === "number"
+        ? { label: String(i), value: d }
+        : {
+            label: String((d as { label?: unknown }).label ?? i),
+            value: Number((d as { value?: unknown }).value ?? 0),
+          },
+    );
+    chart = <SkiaBarChart data={bars} width={chartWidth} height={180} colors={colors} />;
+  } else if (chartType === "distribution") {
+    const first = asArray[0] as { bin?: unknown; count?: unknown } | undefined;
+    if (first && typeof first.bin !== "undefined") {
+      chart = (
+        <SkiaHistogram
+          bins={asArray as { bin: number; count: number }[]}
+          width={chartWidth}
+          height={180}
+          colors={colors}
+        />
+      );
+    } else {
+      const nums = toNumbers();
+      const mn = Math.min(...nums, 0);
+      const mx = Math.max(...nums, 1);
+      const bins = 20;
+      const counts = new Array(bins).fill(0) as number[];
+      nums.forEach((v) => {
+        const idx = Math.min(bins - 1, Math.floor(((v - mn) / (mx - mn || 1)) * bins));
+        counts[idx]! += 1;
+      });
+      chart = (
+        <SkiaHistogram
+          bins={counts.map((c, i) => ({ bin: mn + ((i + 0.5) / bins) * (mx - mn), count: c }))}
+          width={chartWidth}
+          height={180}
+          colors={colors}
+        />
+      );
+    }
+  } else if (chartType === "scatter") {
+    chart = (
+      <SkiaScatter
+        points={(asArray as { x: number; y: number }[]).filter(
+          (p) => typeof p?.x === "number" && typeof p?.y === "number",
+        )}
+        width={chartWidth}
+        height={180}
+        colors={colors}
+      />
+    );
+  } else if (chartType === "candlestick") {
+    chart = (
+      <SkiaCandlesticks
+        bars={asArray as { open: number; high: number; low: number; close: number }[]}
+        width={chartWidth}
+        height={200}
+        colors={colors}
+      />
+    );
+  }
+
+  if (!chart) {
+    return <ChartPlaceholder chartType={chartType} colors={colors} />;
+  }
+  return (
+    <View style={[styles.chartCard, { backgroundColor: colors.backgroundElement }]}>
+      <View style={styles.placeholderRow}>
+        <Ionicons name="bar-chart" size={14} color={colors.textSecondary} />
+        <Text style={{ color: colors.textSecondary, fontSize: 12, fontWeight: "600" }}>
+          {chartType} chart
+        </Text>
+      </View>
+      {chart}
     </View>
   );
 }
@@ -302,9 +419,12 @@ function ChartPlaceholder({
         { backgroundColor: colors.backgroundElement },
       ]}
     >
-      <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-        📊 {chartType} chart
-      </Text>
+      <View style={styles.placeholderRow}>
+        <Ionicons name="bar-chart" size={16} color={colors.textSecondary} />
+        <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
+          {chartType} chart
+        </Text>
+      </View>
     </View>
   );
 }
@@ -323,9 +443,16 @@ function InteractivePlaceholder({
         { backgroundColor: colors.backgroundElement },
       ]}
     >
-      <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
-        🎮 Interactive: {widget}
-      </Text>
+      <View style={styles.placeholderRow}>
+        <Ionicons
+          name="game-controller"
+          size={16}
+          color={colors.textSecondary}
+        />
+        <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
+          Interactive: {widget}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -412,4 +539,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginVertical: 8,
   },
+  chartCard: {
+    marginHorizontal: 24,
+    borderRadius: 12,
+    padding: 12,
+    gap: 8,
+    marginVertical: 8,
+    alignItems: "center",
+  },
+  placeholderRow: { flexDirection: "row", alignItems: "center", gap: 6 },
 });

@@ -1,4 +1,5 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -42,8 +43,14 @@ export default function LessonListScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={{ paddingBottom: 100 }}
     >
+      <Stack.Screen
+        options={{
+          title: mod?.title ?? "Lessons",
+          headerBackTitle: "Learn",
+        }}
+      />
       <View style={styles.header}>
-        <Text style={styles.headerIcon}>{mod?.icon}</Text>
+        {mod && <Ionicons name={mod.icon} size={48} color={mod.color} />}
         <Text style={[styles.headerTitle, { color: colors.text }]}>
           {mod?.title ?? moduleId}
         </Text>
@@ -81,14 +88,18 @@ export default function LessonListScreen() {
                 },
               ]}
             >
-              <Text
-                style={[
-                  styles.lessonNumberText,
-                  { color: isCompleted ? "#fff" : colors.textSecondary },
-                ]}
-              >
-                {isCompleted ? "✓" : idx + 1}
-              </Text>
+              {isCompleted ? (
+                <Ionicons name="checkmark" size={16} color="#fff" />
+              ) : (
+                <Text
+                  style={[
+                    styles.lessonNumberText,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  {idx + 1}
+                </Text>
+              )}
             </View>
             <View style={styles.lessonContent}>
               <Text style={[styles.lessonTitle, { color: colors.text }]}>
@@ -114,7 +125,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: Spacing.one,
   },
-  headerIcon: { fontSize: 48 },
   headerTitle: { fontSize: 24, fontWeight: "700", marginTop: Spacing.two },
   headerDesc: { fontSize: 14, textAlign: "center" },
   headerProgress: { fontSize: 13, marginTop: Spacing.two },

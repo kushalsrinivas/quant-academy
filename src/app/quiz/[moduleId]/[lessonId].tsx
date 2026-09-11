@@ -1,4 +1,5 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useMemo, useState } from "react";
 import {
@@ -10,9 +11,17 @@ import {
   View,
 } from "react-native";
 
+import { AchievementBanner } from "@/components/AchievementBanner";
 import { Colors, Spacing } from "@/constants/theme";
 import { getLesson } from "@/lib/content/loader";
 import type { QuizSection } from "@/lib/content/types";
+import {
+  getAchievementDef,
+  unlockAchievement,
+  type AchievementDef,
+} from "@/lib/db/achievements";
+import { getPerfectQuizCount, recordQuizResult } from "@/lib/db/quiz";
+import { recordActivity } from "@/lib/db/streaks";
 import { addXP, hasEarnedXPFor, XP_VALUES } from "@/lib/db/xp";
 
 export default function QuizScreen() {
@@ -37,7 +46,9 @@ export default function QuizScreen() {
   const [selected, setSelected] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
+  const [answers, setAnswers] = useState<number[]>([]);
   const [finished, setFinished] = useState(false);
+  const [newUnlocks, setNewUnlocks] = useState<AchievementDef[]>([]);
 
   const current = questions[currentIdx];
 
@@ -46,6 +57,7 @@ export default function QuizScreen() {
       if (showResult) return;
       setSelected(idx);
       setShowResult(true);
+      setAnswers((a) => [...a, idx]);
       if (idx === current?.correct) {
         setCorrectCount((c) => c + 1);
       }
@@ -60,11 +72,24 @@ export default function QuizScreen() {
       setShowResult(false);
     } else {
       setFinished(true);
-      const score = correctCount + (selected === current?.correct ? 1 : 0);
+      const score = correctCount;
+      const total = questions.length;
       const sourceId = `${moduleId}/${lessonId}`;
+      await recordQuizResult(db, {
+        moduleId: moduleId ?? "",
+        lessonId: lessonId ?? "",
+        score,
+        total,
+        answers,
+      });
+      if ((await getPerfectQuizCount(db)) >= 10) {
+        if (await unlockAchievement(db, "quiz_ace")) {
+          const def = getAchievementDef("quiz_ace");
+          if (def) setNewUnlocks([def]);
+        }
+      }
       const alreadyEarned = await hasEarnedXPFor(db, "quiz", sourceId);
       if (!alreadyEarned) {
-        const total = questions.length;
         const xp =
           score === total
             ? XP_VALUES.quiz_perfect
@@ -75,14 +100,14 @@ export default function QuizScreen() {
                     total,
               );
         await addXP(db, xp, "quiz", sourceId);
+        await recordActivity(db, { xp });
       }
     }
   }, [
     currentIdx,
     questions.length,
     correctCount,
-    selected,
-    current,
+    answers,
     moduleId,
     lessonId,
     db,
@@ -103,15 +128,32 @@ export default function QuizScreen() {
     const total = questions.length;
     return (
       <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <Text style={styles.finishedIcon}>
-          {finalScore === total ? "🏆" : finalScore >= total / 2 ? "👍" : "📖"}
-        </Text>
+        <Ionicons
+          name={
+            finalScore === total
+              ? "trophy"
+              : finalScore >= total / 2
+                ? "thumbs-up"
+                : "book"
+          }
+          size={64}
+          color={
+            finalScore === total
+              ? "#F59E0B"
+              : finalScore >= total / 2
+                ? "#3B82F6"
+                : colors.textSecondary
+          }
+        />
         <Text style={[styles.finishedTitle, { color: colors.text }]}>
           {finalScore === total ? "Perfect Score!" : "Quiz Complete"}
         </Text>
         <Text style={[styles.finishedScore, { color: colors.textSecondary }]}>
           {finalScore}/{total} correct
         </Text>
+        <View style={styles.unlockWrap}>
+          <AchievementBanner achievements={newUnlocks} />
+        </View>
         <Pressable style={styles.doneBtn} onPress={() => router.back()}>
           <Text style={styles.doneBtnText}>Done</Text>
         </Pressable>
@@ -124,6 +166,12 @@ export default function QuizScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={{ paddingBottom: 100 }}
     >
+      <Stack.Screen
+        options={{
+          title: lesson ? `${lesson.title.slice(0, 22)} Quiz` : "Quiz",
+          headerBackTitle: "Lesson",
+        }}
+      />
       <View style={styles.progressBar}>
         <View
           style={[
@@ -239,9 +287,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   nextBtnText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  finishedIcon: { fontSize: 64 },
   finishedTitle: { fontSize: 24, fontWeight: "700" },
   finishedScore: { fontSize: 16 },
+  unlockWrap: { width: "100%" },
   doneBtn: {
     backgroundColor: "#3B82F6",
     paddingVertical: 12,

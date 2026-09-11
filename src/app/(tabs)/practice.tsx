@@ -1,5 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useSQLiteContext } from "expo-sqlite";
+import { useCallback, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -12,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Colors, Spacing } from "@/constants/theme";
 import { PROBLEMS } from "@/data/problems/registry";
+import { getSolvedProblemIds } from "@/lib/db/problems";
 
 const CATEGORIES = [
   {
@@ -53,9 +56,22 @@ const CATEGORIES = [
 
 export default function PracticeScreen() {
   const router = useRouter();
+  const db = useSQLiteContext();
   const insets = useSafeAreaInsets();
   const scheme = useColorScheme();
   const colors = Colors[scheme === "dark" ? "dark" : "light"];
+
+  const [solvedIds, setSolvedIds] = useState<Set<string>>(new Set());
+
+  const loadSolved = useCallback(async () => {
+    setSolvedIds(await getSolvedProblemIds(db));
+  }, [db]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadSolved();
+    }, [loadSolved]),
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -77,6 +93,9 @@ export default function PracticeScreen() {
 
         {CATEGORIES.map((cat) => {
           const problems = PROBLEMS.filter((p) => p.category === cat.id);
+          const solvedCount = problems.filter((p) =>
+            solvedIds.has(p.id),
+          ).length;
           return (
             <Pressable
               key={cat.id}
@@ -89,7 +108,7 @@ export default function PracticeScreen() {
               ]}
               onPress={() => {
                 if (problems.length > 0) {
-                  router.push(`/problem/${problems[0].id}` as never);
+                  router.push(`/practice/${cat.id}` as never);
                 }
               }}
             >
@@ -111,15 +130,22 @@ export default function PracticeScreen() {
                   {cat.description}
                 </Text>
               </View>
-              <View
-                style={[
-                  styles.countBadge,
-                  { backgroundColor: colors.backgroundSelected },
-                ]}
-              >
-                <Text style={[styles.countText, { color: colors.text }]}>
-                  {problems.length}
-                </Text>
+              <View style={styles.cardRight}>
+                <View
+                  style={[
+                    styles.countBadge,
+                    { backgroundColor: colors.backgroundSelected },
+                  ]}
+                >
+                  <Text style={[styles.countText, { color: colors.text }]}>
+                    {solvedCount}/{problems.length}
+                  </Text>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={16}
+                  color={colors.textSecondary}
+                />
               </View>
             </Pressable>
           );
@@ -154,6 +180,7 @@ const styles = StyleSheet.create({
   cardContent: { flex: 1 },
   cardTitle: { fontSize: 16, fontWeight: "600" },
   cardDesc: { fontSize: 13, marginTop: 2 },
+  cardRight: { flexDirection: "row", alignItems: "center", gap: 6 },
   countBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,

@@ -53,6 +53,22 @@ const TOOLS = [
     iconColor: "#10B981",
     route: "/simulation/exchange",
   },
+  {
+    id: "options",
+    title: "Options Playground",
+    description: "Black-Scholes price, Greeks and payoffs",
+    iconName: "options-outline" as const,
+    iconColor: "#EC4899",
+    route: "/simulation/options",
+  },
+  {
+    id: "monte-carlo",
+    title: "Monte Carlo Lab",
+    description: "Run thousands of trials, watch convergence",
+    iconName: "bar-chart-outline" as const,
+    iconColor: "#8B5CF6",
+    route: "/simulation/monte-carlo",
+  },
 ] as const;
 
 export default function SandboxScreen() {

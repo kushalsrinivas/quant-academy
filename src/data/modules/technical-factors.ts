@@ -276,9 +276,9 @@ const lessons: Lesson[] = [
       {
         type: "code",
         language: "python",
-        code: "import numpy as np\n\nlookback = 20\nvol_adj_momentum = np.zeros(n_stocks)\nfor s in range(n_stocks):\n    recent_ret = returns[-lookback:, s]\n    recent_vol = volume[-lookback:, s]\n    vol_weights = recent_vol / np.sum(recent_vol)\n    vol_adj_momentum[s] = np.sum(vol_weights * recent_ret)\n\n# Z-score normalize\nfactor_z = (vol_adj_momentum - np.mean(vol_adj_momentum)) / np.std(vol_adj_momentum)\nprint('Top 5 z-scores:', factor_z[np.argsort(factor_z)[-5:]])",
+        code: "import numpy as np\n\nnp.random.seed(7)\nn_stocks, n_days = 50, 60\n\n# Synthetic daily returns and volumes for 50 stocks\nreturns = np.random.normal(0.0005, 0.02, (n_days, n_stocks))\nvolume = np.random.uniform(1e6, 10e6, (n_days, n_stocks))\ntickers = [f'Stock_{i}' for i in range(n_stocks)]\n\nlookback = 20\nvol_adj_momentum = np.zeros(n_stocks)\nfor s in range(n_stocks):\n    recent_ret = returns[-lookback:, s]\n    recent_vol = volume[-lookback:, s]\n    vol_weights = recent_vol / np.sum(recent_vol)\n    vol_adj_momentum[s] = np.sum(vol_weights * recent_ret)\n\n# Z-score normalize\nfactor_z = (vol_adj_momentum - np.mean(vol_adj_momentum)) / np.std(vol_adj_momentum)\n\nranked = np.argsort(factor_z)\ntop5 = ranked[-5:][::-1]\nbot5 = ranked[:5]\nprint('Volume-Adjusted Momentum Factor (z-scored):\\n')\nprint('Top 5 stocks:', [tickers[i] for i in top5])\nprint('  Z-scores:', [f'{factor_z[i]:+.2f}' for i in top5])\nprint('\\nBottom 5 stocks:', [tickers[i] for i in bot5])\nprint('  Z-scores:', [f'{factor_z[i]:+.2f}' for i in bot5])",
         output:
-          "Volume-Adjusted Momentum Factor (z-scored):\n\nTop 5 stocks: ['Stock_23', 'Stock_41', 'Stock_7', 'Stock_34', 'Stock_12']\n  Z-scores: ['+2.31', '+2.18', '+1.89', '+1.64', '+1.52']\n\nBottom 5 stocks: ['Stock_38', 'Stock_15', 'Stock_44', 'Stock_2', 'Stock_29']\n  Z-scores: ['-2.47', '-2.11', '-1.93', '-1.76', '-1.58']",
+          "Volume-Adjusted Momentum Factor (z-scored):\n\nTop 5 stocks: ['Stock_45', 'Stock_47', 'Stock_40', 'Stock_28', 'Stock_4']\n  Z-scores: ['+2.22', '+2.13', '+1.66', '+1.55', '+1.19']\n\nBottom 5 stocks: ['Stock_46', 'Stock_32', 'Stock_8', 'Stock_11', 'Stock_29']\n  Z-scores: ['-2.11', '-2.07', '-1.73', '-1.72', '-1.57']",
       },
       {
         type: "quiz",

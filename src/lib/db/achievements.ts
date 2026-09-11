@@ -1,10 +1,15 @@
 import type { SQLiteDatabase } from "expo-sqlite";
 
+import { getLessonsForModule } from "../content/loader";
+import { MODULES } from "../content/modules";
+import type { IconName } from "../content/types";
+import { getCompletedLessons } from "./progress";
+
 export interface AchievementDef {
   id: string;
   title: string;
   description: string;
-  icon: string;
+  icon: IconName;
 }
 
 export const ACHIEVEMENT_DEFS: AchievementDef[] = [
@@ -12,91 +17,91 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
     id: "first_lesson",
     title: "First Steps",
     description: "Complete your first lesson",
-    icon: "🎯",
+    icon: "flag",
   },
   {
     id: "first_trade",
     title: "First Trade",
     description: "Complete Markets 101 Lesson 1",
-    icon: "📈",
+    icon: "trending-up",
   },
   {
     id: "prob_master",
     title: "Probability Master",
     description: "Complete all probability lessons",
-    icon: "🎲",
+    icon: "dice",
   },
   {
     id: "stat_wizard",
     title: "Statistics Wizard",
     description: "Complete all statistics lessons",
-    icon: "📊",
+    icon: "bar-chart",
   },
   {
     id: "beat_market",
     title: "Beat the Market",
     description: "Strategy outperforms buy-and-hold",
-    icon: "🏆",
+    icon: "trophy",
   },
   {
     id: "sharp_thinker",
     title: "Sharp Thinker",
     description: "Achieve Sharpe ratio > 1.5",
-    icon: "🧠",
+    icon: "bulb",
   },
   {
     id: "full_stack",
     title: "Full Stack Quant",
     description: "Complete all 10 modules",
-    icon: "⭐",
+    icon: "star",
   },
   {
     id: "quiz_ace",
     title: "Quiz Ace",
     description: "Score 100% on 10 quizzes",
-    icon: "💯",
+    icon: "ribbon",
   },
   {
     id: "streak_7",
     title: "Week Warrior",
     description: "7-day learning streak",
-    icon: "🔥",
+    icon: "flame",
   },
   {
     id: "streak_30",
     title: "Month Master",
     description: "30-day learning streak",
-    icon: "💎",
+    icon: "diamond",
   },
   {
     id: "strategy_5",
     title: "Strategy Architect",
     description: "Create 5 strategies",
-    icon: "🏗",
+    icon: "construct",
   },
   {
     id: "microstructure",
     title: "Market Maker",
     description: "Complete market microstructure module",
-    icon: "🏦",
+    icon: "business",
   },
   {
     id: "math_complete",
     title: "Math Genius",
     description: "Complete math for quants module",
-    icon: "🔢",
+    icon: "calculator",
   },
   {
     id: "interview_ready",
     title: "Interview Ready",
     description: "Complete interview prep module",
-    icon: "💼",
+    icon: "briefcase",
   },
   {
     id: "ten_backtests",
     title: "Backtester",
     description: "Run 10 backtests",
-    icon: "⚡",
+    icon: "flash",
   },
 ];
 
@@ -136,4 +141,62 @@ export async function isAchievementUnlocked(
     achievementId,
   );
   return (row?.count ?? 0) > 0;
+}
+
+export function getAchievementDef(id: string): AchievementDef | undefined {
+  return ACHIEVEMENT_DEFS.find((a) => a.id === id);
+}
+
+export async function unlockMany(
+  db: SQLiteDatabase,
+  achievementIds: string[],
+): Promise<AchievementDef[]> {
+  const newlyUnlocked: AchievementDef[] = [];
+  for (const id of achievementIds) {
+    if (await unlockAchievement(db, id)) {
+      const def = getAchievementDef(id);
+      if (def) newlyUnlocked.push(def);
+    }
+  }
+  return newlyUnlocked;
+}
+
+const MODULE_ACHIEVEMENTS: Record<string, string> = {
+  probability: "prob_master",
+  statistics: "stat_wizard",
+  "market-microstructure": "microstructure",
+  "math-for-quants": "math_complete",
+  "interview-prep": "interview_ready",
+};
+
+export async function checkLessonAchievements(
+  db: SQLiteDatabase,
+  moduleId: string,
+): Promise<AchievementDef[]> {
+  const toUnlock: string[] = ["first_lesson"];
+  if (moduleId === "markets-101") {
+    const completed = await getCompletedLessons(db, moduleId);
+    if (completed.includes("01-what-are-stocks")) {
+      toUnlock.push("first_trade");
+    }
+  }
+  const moduleAchievement = MODULE_ACHIEVEMENTS[moduleId];
+  if (moduleAchievement) {
+    const completed = await getCompletedLessons(db, moduleId);
+    const total = getLessonsForModule(moduleId).length;
+    if (total > 0 && completed.length >= total) {
+      toUnlock.push(moduleAchievement);
+    }
+  }
+  let allComplete = true;
+  for (const mod of MODULES) {
+    const completed = await getCompletedLessons(db, mod.id);
+    const total = getLessonsForModule(mod.id).length;
+    if (total === 0 || completed.length < total) {
+      allComplete = false;
+      break;
+    }
+  }
+  if (allComplete) toUnlock.push("full_stack");
+  return unlockMany(db, toUnlock);
 }

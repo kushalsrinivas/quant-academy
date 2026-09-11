@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Pressable,
@@ -199,9 +200,12 @@ export default function ExchangeScreen() {
           </View>
         </View>
         {inventoryRisk && (
-          <Text style={[styles.riskWarning, { color: colors.error }]}>
-            ⚠️ High inventory risk! Consider adjusting quotes.
-          </Text>
+          <View style={styles.riskWarningRow}>
+            <Ionicons name="warning" size={16} color={colors.error} />
+            <Text style={[styles.riskWarning, { color: colors.error }]}>
+              High inventory risk! Consider adjusting quotes.
+            </Text>
+          </View>
         )}
       </View>
 
@@ -379,7 +383,14 @@ const styles = StyleSheet.create({
     fontFamily: "monospace",
     marginTop: 2,
   },
-  riskWarning: { fontSize: 12, marginTop: Spacing.two, textAlign: "center" },
+  riskWarningRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: Spacing.two,
+  },
+  riskWarning: { fontSize: 12, textAlign: "center" },
   quoteSection: {
     margin: Spacing.three,
     padding: Spacing.three,

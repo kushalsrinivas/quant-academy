@@ -1,8 +1,13 @@
+import type { Ionicons } from "@expo/vector-icons";
+import type { ComponentProps } from "react";
+
+export type IconName = ComponentProps<typeof Ionicons>["name"];
+
 export interface ModuleMeta {
   id: string;
   title: string;
   description: string;
-  icon: string;
+  icon: IconName;
   order: number;
   color: string;
   lessonCount: number;

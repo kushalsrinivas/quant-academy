@@ -26,6 +26,11 @@ export const XP_VALUES = {
   backtest: 25,
   beat_market: 150,
   streak: 20,
+  review_correct: 10,
+  weekly_complete: 150,
+  options_lab: 25,
+  monte_carlo: 25,
+  certificate: 100,
 } as const;
 
 export function getLevelForXP(totalXP: number) {

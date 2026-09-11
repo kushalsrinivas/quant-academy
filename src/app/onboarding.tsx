@@ -20,7 +20,22 @@ import { Colors, Spacing } from "@/constants/theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-interface OnboardingStep {
+const GOALS = [
+  { id: "interviews", title: "Crack interviews", icon: "briefcase" as const },
+  { id: "trading", title: "Learn trading", icon: "trending-up" as const },
+  { id: "strategies", title: "Build strategies", icon: "construct" as const },
+];
+
+const EXPERIENCE = [
+  { id: "beginner", title: "Beginner" },
+  { id: "intermediate", title: "Some markets" },
+  { id: "advanced", title: "Advanced" },
+];
+
+const DAILY_GOALS = [1, 2, 3];
+
+interface InfoStep {
+  kind: "info";
   icon: keyof typeof Ionicons.glyphMap;
   iconColor: string;
   title: string;
@@ -28,8 +43,11 @@ interface OnboardingStep {
   bullets: string[];
 }
 
-const STEPS: OnboardingStep[] = [
+type Step = InfoStep | { kind: "goal" } | { kind: "level" };
+
+const STEPS: Step[] = [
   {
+    kind: "info",
     icon: "trending-up",
     iconColor: "#3B82F6",
     title: "Learn Quant Trading",
@@ -37,21 +55,23 @@ const STEPS: OnboardingStep[] = [
     bullets: [
       "10 modules from markets to HFT",
       "100 lessons with quizzes",
-      "Real concepts that HRT looks for",
+      "Real concepts that top firms look for",
     ],
   },
   {
+    kind: "info",
     icon: "flask",
     iconColor: "#8B5CF6",
     title: "Build & Simulate",
     subtitle: "Hands-on tools to learn by doing.",
     bullets: [
       "Order book & exchange simulators",
-      "Probability experiments",
-      "Stock comparison tools",
+      "Options playground & Monte Carlo lab",
+      "NIFTY 50 historical data",
     ],
   },
   {
+    kind: "info",
     icon: "analytics",
     iconColor: "#10B981",
     title: "Strategy Builder",
@@ -63,6 +83,7 @@ const STEPS: OnboardingStep[] = [
     ],
   },
   {
+    kind: "info",
     icon: "trophy",
     iconColor: "#F59E0B",
     title: "Level Up",
@@ -70,9 +91,11 @@ const STEPS: OnboardingStep[] = [
     bullets: [
       "Intern to HFT Engineer",
       "15 achievements to unlock",
-      "Interview prep for top firms",
+      "Weekly challenges + certificates",
     ],
   },
+  { kind: "goal" },
+  { kind: "level" },
 ];
 
 export default function OnboardingScreen() {
@@ -84,6 +107,9 @@ export default function OnboardingScreen() {
   const flatListRef = useRef<FlatList>(null);
 
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [goal, setGoal] = useState("interviews");
+  const [experience, setExperience] = useState("beginner");
+  const [dailyGoal, setDailyGoal] = useState(1);
   const scrollX = useRef(new Animated.Value(0)).current;
 
   const onScroll = Animated.event(
@@ -113,45 +139,171 @@ export default function OnboardingScreen() {
     await db.runAsync(
       "INSERT OR REPLACE INTO settings (key, value) VALUES ('onboarding_complete', '1')",
     );
+    await db.runAsync(
+      "INSERT OR REPLACE INTO settings (key, value) VALUES ('onboarding_v2_complete', '1')",
+    );
+    await db.runAsync(
+      "INSERT OR REPLACE INTO settings (key, value) VALUES ('user_goal', ?)",
+      goal,
+    );
+    await db.runAsync(
+      "INSERT OR REPLACE INTO settings (key, value) VALUES ('experience_level', ?)",
+      experience,
+    );
+    await db.runAsync(
+      "INSERT OR REPLACE INTO settings (key, value) VALUES ('daily_goal_lessons', ?)",
+      String(dailyGoal),
+    );
     router.replace("/(tabs)" as never);
-  }, [db, router]);
+  }, [db, router, goal, experience, dailyGoal]);
 
   const isLast = currentIndex === STEPS.length - 1;
 
   const renderStep = useCallback(
-    ({ item }: { item: OnboardingStep }) => (
-      <View style={[styles.stepContainer, { width: SCREEN_WIDTH }]}>
-        <View
-          style={[
-            styles.iconCircle,
-            { backgroundColor: item.iconColor + "18" },
-          ]}
-        >
-          <Ionicons name={item.icon} size={56} color={item.iconColor} />
-        </View>
-        <Text style={[styles.stepTitle, { color: colors.text }]}>
-          {item.title}
-        </Text>
-        <Text style={[styles.stepSubtitle, { color: colors.textSecondary }]}>
-          {item.subtitle}
-        </Text>
-        <View style={styles.bulletsContainer}>
-          {item.bullets.map((bullet, i) => (
-            <View key={i} style={styles.bulletRow}>
-              <Ionicons
-                name="checkmark-circle"
-                size={20}
-                color={item.iconColor}
-              />
-              <Text style={[styles.bulletText, { color: colors.text }]}>
-                {bullet}
-              </Text>
+    ({ item }: { item: Step }) => {
+      if (item.kind === "goal") {
+        return (
+          <View style={[styles.stepContainer, { width: SCREEN_WIDTH }]}>
+            <Text style={[styles.stepTitle, { color: colors.text }]}>
+              What brings you here?
+            </Text>
+            <Text style={[styles.stepSubtitle, { color: colors.textSecondary }]}>
+              We will personalize your learning path.
+            </Text>
+            <View style={styles.pickList}>
+              {GOALS.map((g) => (
+                <Pressable
+                  key={g.id}
+                  style={[
+                    styles.pickRow,
+                    {
+                      backgroundColor:
+                        goal === g.id ? "#3B82F6" : colors.backgroundElement,
+                    },
+                  ]}
+                  onPress={() => setGoal(g.id)}
+                >
+                  <Ionicons
+                    name={g.icon}
+                    size={20}
+                    color={goal === g.id ? "#fff" : "#3B82F6"}
+                  />
+                  <Text
+                    style={[
+                      styles.pickText,
+                      { color: goal === g.id ? "#fff" : colors.text },
+                    ]}
+                  >
+                    {g.title}
+                  </Text>
+                </Pressable>
+              ))}
             </View>
-          ))}
+          </View>
+        );
+      }
+      if (item.kind === "level") {
+        return (
+          <View style={[styles.stepContainer, { width: SCREEN_WIDTH }]}>
+            <Text style={[styles.stepTitle, { color: colors.text }]}>
+              Your level & pace
+            </Text>
+            <Text style={[styles.stepSubtitle, { color: colors.textSecondary }]}>
+              Set experience and a daily goal you can keep.
+            </Text>
+            <View style={styles.pickList}>
+              <Text style={[styles.groupLabel, { color: colors.textSecondary }]}>
+                EXPERIENCE
+              </Text>
+              <View style={styles.chipRow}>
+                {EXPERIENCE.map((e) => (
+                  <Pressable
+                    key={e.id}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor:
+                          experience === e.id ? "#3B82F6" : colors.backgroundElement,
+                      },
+                    ]}
+                    onPress={() => setExperience(e.id)}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        { color: experience === e.id ? "#fff" : colors.text },
+                      ]}
+                    >
+                      {e.title}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+              <Text style={[styles.groupLabel, { color: colors.textSecondary }]}>
+                DAILY GOAL
+              </Text>
+              <View style={styles.chipRow}>
+                {DAILY_GOALS.map((d) => (
+                  <Pressable
+                    key={d}
+                    style={[
+                      styles.chip,
+                      {
+                        backgroundColor:
+                          dailyGoal === d ? "#10B981" : colors.backgroundElement,
+                      },
+                    ]}
+                    onPress={() => setDailyGoal(d)}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        { color: dailyGoal === d ? "#fff" : colors.text },
+                      ]}
+                    >
+                      {d} lesson{d > 1 ? "s" : ""}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          </View>
+        );
+      }
+      return (
+        <View style={[styles.stepContainer, { width: SCREEN_WIDTH }]}>
+          <View
+            style={[
+              styles.iconCircle,
+              { backgroundColor: item.iconColor + "18" },
+            ]}
+          >
+            <Ionicons name={item.icon} size={56} color={item.iconColor} />
+          </View>
+          <Text style={[styles.stepTitle, { color: colors.text }]}>
+            {item.title}
+          </Text>
+          <Text style={[styles.stepSubtitle, { color: colors.textSecondary }]}>
+            {item.subtitle}
+          </Text>
+          <View style={styles.bulletsContainer}>
+            {item.bullets.map((bullet, i) => (
+              <View key={i} style={styles.bulletRow}>
+                <Ionicons
+                  name="checkmark-circle"
+                  size={20}
+                  color={item.iconColor}
+                />
+                <Text style={[styles.bulletText, { color: colors.text }]}>
+                  {bullet}
+                </Text>
+              </View>
+            ))}
+          </View>
         </View>
-      </View>
-    ),
-    [colors],
+      );
+    },
+    [colors, goal, experience, dailyGoal],
   );
 
   return (
@@ -178,7 +330,6 @@ export default function OnboardingScreen() {
         bounces={false}
       />
 
-      {/* Dots */}
       <View style={styles.dotsRow}>
         {STEPS.map((_, i) => {
           const inputRange = [
@@ -212,7 +363,6 @@ export default function OnboardingScreen() {
         })}
       </View>
 
-      {/* Bottom Button */}
       <View
         style={[
           styles.bottomArea,
@@ -227,7 +377,7 @@ export default function OnboardingScreen() {
           onPress={isLast ? completeOnboarding : goNext}
         >
           <Text style={styles.primaryBtnText}>
-            {isLast ? "Let's Go" : "Next"}
+            {isLast ? "Start Learning" : "Next"}
           </Text>
           {!isLast && <Ionicons name="arrow-forward" size={18} color="#fff" />}
         </Pressable>
@@ -284,6 +434,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     flex: 1,
   },
+  pickList: { alignSelf: "stretch", gap: 10 },
+  pickRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 16,
+    borderRadius: 14,
+  },
+  pickText: { fontSize: 16, fontWeight: "700" },
+  groupLabel: { fontSize: 11, fontWeight: "800", letterSpacing: 1 },
+  chipRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
+  chip: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 20 },
+  chipText: { fontSize: 14, fontWeight: "700" },
   dotsRow: {
     flexDirection: "row",
     justifyContent: "center",

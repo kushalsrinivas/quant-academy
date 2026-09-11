@@ -1,6 +1,7 @@
-import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { Stack, useRouter } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -13,8 +14,21 @@ import {
 } from "react-native";
 
 import { Colors, Spacing } from "@/constants/theme";
-import { saveStrategy } from "@/lib/db/strategies";
-import { addXP, XP_VALUES } from "@/lib/db/xp";
+import {
+  NIFTY50_DAILY,
+  STOCK_DATA,
+  STOCK_NAMES,
+} from "@/data/datasets/nifty50-daily";
+import {
+  getAchievementDef,
+  unlockAchievement,
+} from "@/lib/db/achievements";
+import { saveBacktestRun } from "@/lib/db/backtests";
+import { getStrategyCount, saveStrategy } from "@/lib/db/strategies";
+import { getTodayKey, recordActivity } from "@/lib/db/streaks";
+import { addXP, hasEarnedXPFor, XP_VALUES } from "@/lib/db/xp";
+import { runBacktest as runEngineBacktest } from "@/lib/engine/backtest";
+import { getLocale, LOCALES, type MarketLocale } from "@/lib/market/locale";
 import {
   setLastResult,
   type SharedBacktestResult,
@@ -27,91 +41,56 @@ interface Condition {
   value: string;
 }
 
-const INDICATORS = ["price", "sma", "ema", "rsi", "momentum"];
+const INDICATORS = [
+  "price",
+  "sma",
+  "ema",
+  "rsi",
+  "momentum",
+  "macd",
+  "macd_signal",
+  "bollinger_upper",
+  "bollinger_lower",
+];
+const INDICATOR_LABELS: Record<string, string> = {
+  price: "PRICE",
+  sma: "SMA",
+  ema: "EMA",
+  rsi: "RSI",
+  momentum: "MOM",
+  macd: "MACD",
+  macd_signal: "MACD-SIG",
+  bollinger_upper: "BB-UP",
+  bollinger_lower: "BB-LO",
+};
 const OPERATORS = [">", "<", ">=", "<=", "crosses_above", "crosses_below"];
 
-function generateBars(n: number) {
-  const bars: {
-    date: string;
-    open: number;
-    high: number;
-    low: number;
-    close: number;
-    volume: number;
-  }[] = [];
-  let price = 100;
-  const d = new Date("2022-01-03");
-  for (let i = 0; i < n; i++) {
-    const ret = (Math.random() - 0.498) * 0.03;
-    const open = price;
-    const close = open * (1 + ret);
-    const high = Math.max(open, close) * (1 + Math.random() * 0.01);
-    const low = Math.min(open, close) * (1 - Math.random() * 0.01);
-    bars.push({
-      date: d.toISOString().split("T")[0],
-      open: Math.round(open * 100) / 100,
-      high: Math.round(high * 100) / 100,
-      low: Math.round(low * 100) / 100,
-      close: Math.round(close * 100) / 100,
-      volume: Math.round(1e6 + Math.random() * 5e6),
-    });
-    price = close;
-    d.setDate(d.getDate() + 1);
-    if (d.getDay() === 0) d.setDate(d.getDate() + 1);
-    if (d.getDay() === 6) d.setDate(d.getDate() + 2);
-  }
-  return bars;
-}
+const NIFTY_SYMBOL = "NIFTY 50";
+const SYMBOLS = [NIFTY_SYMBOL, ...STOCK_NAMES];
 
-function calcSMA(data: number[], period: number): (number | null)[] {
-  return data.map((_, i) => {
-    if (i < period - 1) return null;
-    let s = 0;
-    for (let j = i - period + 1; j <= i; j++) s += data[j];
-    return s / period;
-  });
-}
-
-function calcRSI(data: number[], period: number): (number | null)[] {
-  const result: (number | null)[] = [null];
-  for (let i = 1; i < data.length; i++) {
-    if (i < period + 1) {
-      result.push(null);
-      continue;
-    }
-    let gains = 0,
-      losses = 0;
-    for (let j = i - period; j < i; j++) {
-      const d = data[j + 1] - data[j];
-      if (d > 0) gains += d;
-      else losses -= d;
-    }
-    const ag = gains / period;
-    const al = losses / period;
-    result.push(al === 0 ? 100 : 100 - 100 / (1 + ag / al));
-  }
-  return result;
-}
-
-function getIndicator(
-  closes: number[],
-  name: string,
+function paramsForIndicator(
+  indicator: string,
   period: number,
-): (number | null)[] {
-  switch (name) {
-    case "price":
-      return closes.map((c) => c);
+): Record<string, number> {
+  switch (indicator) {
+    case "macd":
+    case "macd_signal":
+      return { fast: 12, slow: 26, signal: 9 };
+    case "bollinger_upper":
+    case "bollinger_lower":
+      return { period, stdDev: 2 };
     case "sma":
-      return calcSMA(closes, period);
     case "ema":
-      return calcSMA(closes, period); // simplified
     case "rsi":
-      return calcRSI(closes, period);
     case "momentum":
-      return closes.map((c, i) => (i < period ? null : c - closes[i - period]));
+      return { period };
     default:
-      return closes.map(() => null);
+      return {};
   }
+}
+
+function datasetForSymbol(symbol: string) {
+  return symbol === NIFTY_SYMBOL ? NIFTY50_DAILY : STOCK_DATA[symbol];
 }
 
 export default function StrategyBuilderScreen() {
@@ -121,6 +100,7 @@ export default function StrategyBuilderScreen() {
   const colors = Colors[scheme === "dark" ? "dark" : "light"];
 
   const [name, setName] = useState("My Strategy");
+  const [symbol, setSymbol] = useState<string>(NIFTY_SYMBOL);
   const [buyConditions, setBuyConditions] = useState<Condition[]>([
     { indicator: "rsi", period: "14", operator: "<", value: "30" },
   ]);
@@ -132,6 +112,12 @@ export default function StrategyBuilderScreen() {
   const [slippage, setSlippage] = useState("10");
   const [commission, setCommission] = useState("20");
   const [running, setRunning] = useState(false);
+  const [locale, setLocaleState] = useState<MarketLocale>("IN");
+
+  useEffect(() => {
+    getLocale(db).then(setLocaleState).catch(() => {});
+  }, [db]);
+  const cur = LOCALES[locale].currencySymbol;
 
   const addCondition = (isBuy: boolean) => {
     const newCond: Condition = {
@@ -169,174 +155,78 @@ export default function StrategyBuilderScreen() {
     setRunning(true);
 
     try {
-      const bars = generateBars(500);
-      const closes = bars.map((b) => b.close);
-      const initCap = parseFloat(capital) || 100000;
-      const position = (parseFloat(posSize) || 100) / 100;
-      const slip = parseFloat(slippage) || 10;
-      const comm = parseFloat(commission) || 20;
-
-      const buyIndicators = buyConditions.map((c) =>
-        getIndicator(closes, c.indicator, parseInt(c.period) || 14),
-      );
-      const sellIndicators = sellConditions.map((c) =>
-        getIndicator(closes, c.indicator, parseInt(c.period) || 14),
-      );
-
-      let cash = initCap;
-      let shares = 0;
-      let entryPrice = 0;
-      let entryDate = "";
-      const tradesList: SharedBacktestResult["trades"] = [];
-      const equity: { date: string; value: number }[] = [];
-
-      for (let i = 0; i < bars.length; i++) {
-        const price = closes[i];
-        equity.push({ date: bars[i].date, value: cash + shares * price });
-
-        if (shares === 0) {
-          const allMet = buyConditions.every((c, ci) => {
-            const iv = buyIndicators[ci][i];
-            const tv = parseFloat(c.value);
-            if (iv === null || isNaN(tv)) return false;
-            switch (c.operator) {
-              case ">":
-                return iv > tv;
-              case "<":
-                return iv < tv;
-              case ">=":
-                return iv >= tv;
-              case "<=":
-                return iv <= tv;
-              case "crosses_above":
-                return (
-                  i > 0 && (buyIndicators[ci][i - 1] ?? 0) <= tv && iv > tv
-                );
-              case "crosses_below":
-                return (
-                  i > 0 && (buyIndicators[ci][i - 1] ?? 0) >= tv && iv < tv
-                );
-              default:
-                return false;
-            }
-          });
-          if (allMet) {
-            const ep = price * (1 + slip / 10000);
-            const avail = cash * position - comm;
-            shares = Math.floor(avail / ep);
-            if (shares > 0) {
-              entryPrice = ep;
-              entryDate = bars[i].date;
-              cash -= shares * ep + comm;
-            }
-          }
-        } else {
-          const allMet = sellConditions.every((c, ci) => {
-            const iv = sellIndicators[ci][i];
-            const tv = parseFloat(c.value);
-            if (iv === null || isNaN(tv)) return false;
-            switch (c.operator) {
-              case ">":
-                return iv > tv;
-              case "<":
-                return iv < tv;
-              case ">=":
-                return iv >= tv;
-              case "<=":
-                return iv <= tv;
-              case "crosses_above":
-                return (
-                  i > 0 && (sellIndicators[ci][i - 1] ?? 0) <= tv && iv > tv
-                );
-              case "crosses_below":
-                return (
-                  i > 0 && (sellIndicators[ci][i - 1] ?? 0) >= tv && iv < tv
-                );
-              default:
-                return false;
-            }
-          });
-          if (allMet) {
-            const ep = price * (1 - slip / 10000);
-            const pnl = (ep - entryPrice) * shares - comm;
-            tradesList.push({
-              entryDate,
-              exitDate: bars[i].date,
-              entryPrice: Math.round(entryPrice * 100) / 100,
-              exitPrice: Math.round(ep * 100) / 100,
-              quantity: shares,
-              pnl: Math.round(pnl * 100) / 100,
-              returnPct:
-                Math.round(((ep - entryPrice) / entryPrice) * 10000) / 10000,
-            });
-            cash += shares * ep - comm;
-            shares = 0;
-          }
-        }
+      const bars = datasetForSymbol(symbol);
+      if (!bars || bars.length === 0) {
+        Alert.alert("Error", "No market data available for this symbol");
+        return;
       }
+      const parsedCapital = parseFloat(capital);
+      const parsedPosSize = parseFloat(posSize);
+      const parsedSlippage = parseFloat(slippage);
+      const parsedCommission = parseFloat(commission);
+      const initCap = Number.isNaN(parsedCapital) ? 100000 : parsedCapital;
+      const position = (Number.isNaN(parsedPosSize) ? 100 : parsedPosSize) / 100;
+      const slip = Number.isNaN(parsedSlippage) ? 10 : parsedSlippage;
+      const comm = Number.isNaN(parsedCommission) ? 20 : parsedCommission;
 
-      if (shares > 0) {
-        const fp = closes[closes.length - 1];
-        tradesList.push({
-          entryDate,
-          exitDate: bars[bars.length - 1].date,
-          entryPrice: Math.round(entryPrice * 100) / 100,
-          exitPrice: Math.round(fp * 100) / 100,
-          quantity: shares,
-          pnl: Math.round((fp - entryPrice) * shares * 100) / 100,
-          returnPct:
-            Math.round(((fp - entryPrice) / entryPrice) * 10000) / 10000,
-        });
-        cash += shares * fp;
-      }
-
-      const finalEq = equity[equity.length - 1]?.value ?? initCap;
-      const totalReturn = (finalEq - initCap) / initCap;
-      const bhReturn = (closes[closes.length - 1] - closes[0]) / closes[0];
-      const dailyRet = equity
-        .slice(1)
-        .map((e, i) => (e.value - equity[i].value) / equity[i].value);
-      const avgR = dailyRet.reduce((s, r) => s + r, 0) / dailyRet.length;
-      const stdR = Math.sqrt(
-        dailyRet.reduce((s, r) => s + (r - avgR) ** 2, 0) / dailyRet.length,
-      );
-      const sharpe = stdR > 0 ? (avgR / stdR) * Math.sqrt(252) : 0;
-      let maxDD = 0,
-        peak = 0;
-      for (const e of equity) {
-        if (e.value > peak) peak = e.value;
-        const dd = (peak - e.value) / peak;
-        if (dd > maxDD) maxDD = dd;
-      }
-      const wins = tradesList.filter((t) => t.pnl > 0);
-      const winRate =
-        tradesList.length > 0 ? wins.length / tradesList.length : 0;
-      const grossP = wins.reduce((s, t) => s + t.pnl, 0);
-      const grossL = Math.abs(
-        tradesList.filter((t) => t.pnl <= 0).reduce((s, t) => s + t.pnl, 0),
-      );
-      const pf = grossL > 0 ? grossP / grossL : grossP > 0 ? 999 : 0;
+      const toEngineCondition = (
+        c: Condition,
+      ): import("@/lib/engine/backtest").Condition => {
+        const numericValue = parseFloat(c.value);
+        return {
+          indicator: c.indicator,
+          params: paramsForIndicator(c.indicator, parseInt(c.period, 10) || 14),
+          operator: c.operator as import("@/lib/engine/backtest").ComparisonOp,
+          value: Number.isNaN(numericValue) ? c.value.trim() : numericValue,
+        };
+      };
+      const engineResult = runEngineBacktest(bars, {
+        buyConditions: buyConditions.map(toEngineCondition),
+        sellConditions: sellConditions.map(toEngineCondition),
+        initialCapital: initCap,
+        positionSize: position,
+        slippage: slip,
+        commission: comm,
+      });
 
       const result: SharedBacktestResult = {
-        totalReturn: Math.round(totalReturn * 10000) / 10000,
-        annualizedReturn:
-          Math.round(
-            (Math.pow(1 + totalReturn, 252 / bars.length) - 1) * 10000,
-          ) / 10000,
-        sharpeRatio: Math.round(sharpe * 100) / 100,
-        maxDrawdown: Math.round(maxDD * 10000) / 10000,
-        winRate: Math.round(winRate * 10000) / 10000,
-        totalTrades: tradesList.length,
-        profitFactor: Math.round(pf * 100) / 100,
-        buyHoldReturn: Math.round(bhReturn * 10000) / 10000,
-        trades: tradesList,
-        equityCurve: equity,
+        totalReturn: engineResult.totalReturn,
+        annualizedReturn: engineResult.annualizedReturn,
+        sharpeRatio: engineResult.sharpeRatio,
+        maxDrawdown: engineResult.maxDrawdown,
+        winRate: engineResult.winRate,
+        totalTrades: engineResult.totalTrades,
+        profitFactor: Number.isFinite(engineResult.profitFactor)
+          ? engineResult.profitFactor
+          : null,
+        buyHoldReturn: engineResult.buyHoldReturn,
+        trades: engineResult.trades,
+        equityCurve: engineResult.equityCurve,
         strategyName: name,
+        symbol,
       };
 
+      const runId = await saveBacktestRun(db, {
+        strategyName: name,
+        symbol,
+        config: {
+          buyConditions,
+          sellConditions,
+          initialCapital: initCap,
+          positionSizePct: position * 100,
+          slippageBps: slip,
+          commission: comm,
+        },
+        result,
+      });
+
       setLastResult(result);
-      await addXP(db, XP_VALUES.backtest, "backtest", name);
-      router.push("/strategy/results" as never);
+      const xpSourceId = `${name}:${getTodayKey()}`;
+      if (!(await hasEarnedXPFor(db, "backtest", xpSourceId))) {
+        await addXP(db, XP_VALUES.backtest, "backtest", xpSourceId);
+        await recordActivity(db, { xp: XP_VALUES.backtest });
+      }
+      router.push(`/strategy/results?id=${runId}` as never);
     } finally {
       setRunning(false);
     }
@@ -348,6 +238,7 @@ export default function StrategyBuilderScreen() {
     slippage,
     commission,
     name,
+    symbol,
     db,
     router,
   ]);
@@ -360,8 +251,16 @@ export default function StrategyBuilderScreen() {
       posSize,
       slippage,
       commission,
+      symbol,
     });
-    Alert.alert("Saved", "Strategy saved successfully");
+    let message = "Strategy saved successfully";
+    if ((await getStrategyCount(db)) >= 5) {
+      if (await unlockAchievement(db, "strategy_5")) {
+        const def = getAchievementDef("strategy_5");
+        if (def) message += `\nAchievement unlocked: ${def.title}`;
+      }
+    }
+    Alert.alert("Saved", message);
   }, [
     db,
     name,
@@ -371,7 +270,10 @@ export default function StrategyBuilderScreen() {
     posSize,
     slippage,
     commission,
+    symbol,
   ]);
+
+  const activeBars = datasetForSymbol(symbol) ?? [];
 
   const renderConditions = (conditions: Condition[], isBuy: boolean) => (
     <View style={styles.condSection}>
@@ -398,31 +300,42 @@ export default function StrategyBuilderScreen() {
               >
                 Indicator
               </Text>
-              <View style={styles.pickerRow}>
-                {INDICATORS.map((ind) => (
-                  <Pressable
-                    key={ind}
-                    style={[
-                      styles.miniBtn,
-                      c.indicator === ind && styles.miniBtnActive,
-                    ]}
-                    onPress={() =>
-                      updateCondition(isBuy, idx, "indicator", ind)
-                    }
-                  >
-                    <Text
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View style={styles.pickerRow}>
+                  {INDICATORS.map((ind) => (
+                    <Pressable
+                      key={ind}
                       style={[
-                        styles.miniBtnText,
-                        c.indicator === ind && styles.miniBtnTextActive,
+                        styles.miniBtn,
+                        c.indicator === ind && styles.miniBtnActive,
                       ]}
+                      onPress={() =>
+                        updateCondition(isBuy, idx, "indicator", ind)
+                      }
                     >
-                      {ind.toUpperCase()}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
+                      <Text
+                        style={[
+                          styles.miniBtnText,
+                          c.indicator === ind && styles.miniBtnTextActive,
+                        ]}
+                      >
+                        {INDICATOR_LABELS[ind] ?? ind.toUpperCase()}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </ScrollView>
             </View>
-            {c.indicator !== "price" && (
+            {(c.indicator === "macd" || c.indicator === "macd_signal") && (
+              <Text
+                style={[styles.fixedParams, { color: colors.textSecondary }]}
+              >
+                Fixed 12 / 26 / 9
+              </Text>
+            )}
+            {c.indicator !== "price" &&
+              c.indicator !== "macd" &&
+              c.indicator !== "macd_signal" && (
               <View style={styles.paramInput}>
                 <Text
                   style={[styles.pickerLabel, { color: colors.textSecondary }]}
@@ -499,7 +412,7 @@ export default function StrategyBuilderScreen() {
             style={styles.removeBtn}
             onPress={() => removeCondition(isBuy, idx)}
           >
-            <Text style={styles.removeBtnText}>✕</Text>
+            <Ionicons name="close" size={16} color="#EF4444" />
           </Pressable>
         </View>
       ))}
@@ -519,6 +432,7 @@ export default function StrategyBuilderScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       contentContainerStyle={{ paddingBottom: 120 }}
     >
+      <Stack.Screen options={{ title: "Strategy Builder", headerBackTitle: "Sandbox" }} />
       <View style={styles.nameSection}>
         <Text style={[styles.label, { color: colors.textSecondary }]}>
           Strategy Name
@@ -531,6 +445,43 @@ export default function StrategyBuilderScreen() {
           value={name}
           onChangeText={setName}
         />
+      </View>
+
+      <View style={styles.nameSection}>
+        <Text style={[styles.label, { color: colors.textSecondary }]}>
+          Market Data
+        </Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={styles.symbolRow}>
+            {SYMBOLS.map((s) => (
+              <Pressable
+                key={s}
+                style={[
+                  styles.miniBtn,
+                  styles.symbolBtn,
+                  s === symbol && styles.miniBtnActive,
+                ]}
+                onPress={() => setSymbol(s)}
+              >
+                <Text
+                  style={[
+                    styles.miniBtnText,
+                    s === symbol && styles.miniBtnTextActive,
+                  ]}
+                >
+                  {s}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
+        {activeBars.length > 0 && (
+          <Text style={[styles.dataRange, { color: colors.textSecondary }]}>
+            {activeBars.length} daily bars · {activeBars[0].date} →{" "}
+            {activeBars[activeBars.length - 1].date} · {LOCALES[locale].exchange}{" "}
+            {LOCALES[locale].marketHours}
+          </Text>
+        )}
       </View>
 
       {renderConditions(buyConditions, true)}
@@ -547,10 +498,10 @@ export default function StrategyBuilderScreen() {
         </Text>
         <View style={styles.paramGrid}>
           {[
-            ["Capital (₹)", capital, setCapital],
+            [`Capital (${cur})`, capital, setCapital],
             ["Position %", posSize, setPosSize],
             ["Slippage (bps)", slippage, setSlippage],
-            ["Commission (₹)", commission, setCommission],
+            [`Commission (${cur})`, commission, setCommission],
           ].map(([label, val, setter]) => (
             <View key={label as string} style={styles.paramItem}>
               <Text
@@ -581,9 +532,12 @@ export default function StrategyBuilderScreen() {
           onPress={runBacktest}
           disabled={running}
         >
-          <Text style={styles.runBtnText}>
-            {running ? "Running..." : "▶ RUN BACKTEST"}
-          </Text>
+          <View style={styles.runBtnContent}>
+            {!running && <Ionicons name="play" size={16} color="#fff" />}
+            <Text style={styles.runBtnText}>
+              {running ? "Running..." : "RUN BACKTEST"}
+            </Text>
+          </View>
         </Pressable>
         <Pressable
           style={[
@@ -637,6 +591,10 @@ const styles = StyleSheet.create({
   miniBtnActive: { backgroundColor: "#3B82F6" },
   miniBtnText: { fontSize: 10, fontWeight: "600", color: "#888" },
   miniBtnTextActive: { color: "#fff" },
+  fixedParams: { fontSize: 11, fontWeight: "500" },
+  symbolRow: { flexDirection: "row", gap: 6, paddingVertical: 2 },
+  symbolBtn: { paddingHorizontal: 12, paddingVertical: 8 },
+  dataRange: { fontSize: 11, marginTop: 2 },
   paramInput: { gap: 4 },
   smallInput: {
     borderWidth: 1,
@@ -647,7 +605,6 @@ const styles = StyleSheet.create({
     width: 80,
   },
   removeBtn: { padding: 4 },
-  removeBtnText: { color: "#EF4444", fontSize: 16, fontWeight: "600" },
   addBtn: { paddingVertical: 10, borderRadius: 10, alignItems: "center" },
   addBtnText: { fontSize: 13, fontWeight: "600" },
   paramsSection: {
@@ -675,6 +632,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   runBtnText: { color: "#fff", fontSize: 17, fontWeight: "700" },
+  runBtnContent: { flexDirection: "row", alignItems: "center", gap: 8 },
   saveBtn: { paddingVertical: 14, borderRadius: 12, alignItems: "center" },
   saveBtnText: { fontSize: 15, fontWeight: "600" },
 });
